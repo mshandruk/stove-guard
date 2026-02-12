@@ -1,6 +1,6 @@
 # Gas Stove Guard
 
-An intelligent computer vision system for real-time monitoring of gas stoves.
+An intelligent computer vision system for real-time monitoring of stoves.
 The project aims to prevent domestic accidents by detecting active burners and potential hazards,
 such as unattended cooking or forgotten food.
 
