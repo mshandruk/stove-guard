@@ -1,168 +1,125 @@
 #include <cassert>
 #include <chrono>
-#include <iostream>
 #include <thread>
 
 using namespace std::chrono;
 
-namespace gas_mon {
-enum class StoveState : uint8_t {
-    Idle,
-    Cooking
+namespace stove_monitor {
+enum class StoveState : uint8_t { On, Off };
+enum class PersonState : uint8_t { Present, Absent };
 
+enum class Event : uint8_t {
+    None,
+    DangerousEntered,
+    DangerousCleared,
+    AlarmStarted,
+    AlarmCleared,
 };
-constexpr int TIMER_SEC = 15;
 
-// TODO: encapsulate global state
-steady_clock::time_point timerStart{};
-auto stoveState = StoveState::Idle;
+constexpr int ALARM_THRESHOLD_SEC = 15;
 
-bool isTimerExpired() {
-    const auto currentTime = steady_clock::now();
-    const auto elapsed = duration_cast<seconds>(currentTime - timerStart).count();
-    return elapsed >= TIMER_SEC;
-}
+class StoveMonitor {
+  public:
+    [[nodiscard]] Event updateState(const StoveState stoveState, const PersonState personState) {
+        const auto dangerous = isDangerous(stoveState, personState);
 
-void updateState(const bool stoveOn, const bool cookwarePresent, const bool personPresent) {
-    switch (stoveState) {
-    case StoveState::Idle: {
-        if (stoveOn && cookwarePresent) {
-            std::cout << "The gas stove is ON and there is cookware on it." << '\n';
-            stoveState = StoveState::Cooking;
-            timerStart = steady_clock::now();
-            std::cout << "Timer is started." << '\n';
-        } else if (stoveOn && !personPresent) {
-            if (isTimerExpired()) {
-                std::cout << "The gas stove has been ON for a long time and there is not cookware on it but the "
-                             "person is not present."
-                          << '\n';
-            } else {
-                std::cout << "The gas stove is ON but the person is not present" << '\n';
-            }
-        } else {
+        if (systemState_ == SystemState::Safe && dangerous) {
+            systemState_ = SystemState::Dangerous;
+            startTimer_ = steady_clock::now();
 
-            /*TODO: This is a side effect because the timer is reset every time so that it does not expire. It would be
-                better not to start. The timer should be remain inactive here.
-            */
-
-            std::cout << "The gas stove is OFF and in the idle state" << '\n';
-            timerStart = steady_clock::now();
-            std::cout << "Timer is reset." << '\n';
+            return Event::DangerousEntered;
         }
-        break;
+
+        if (systemState_ == SystemState::Dangerous && !dangerous) {
+            systemState_ = SystemState::Safe;
+            return Event::DangerousCleared;
+        }
+
+        if (systemState_ == SystemState::Dangerous && isTimerExpired()) {
+            systemState_ = SystemState::Alarmed;
+
+            return Event::AlarmStarted;
+        }
+
+        if (systemState_ == SystemState::Alarmed && !dangerous) {
+            systemState_ = SystemState::Safe;
+            return Event::AlarmCleared;
+        }
+
+        return Event::None;
     }
-    case StoveState::Cooking: {
-        if (!stoveOn || !cookwarePresent) {
-            stoveState = StoveState::Idle;
-            std::cout << "The gas stove is OFF or there is not cookware on it." << '\n';
-            timerStart = steady_clock::now();
-            std::cout << "Timer is reset." << '\n';
-            break;
-        }
 
-        if (personPresent) {
-            std::cout << "The gas stove is ON and the person is present." << '\n';
-            timerStart = steady_clock::now();
-            std::cout << "Timer is reset." << '\n';
-            break;
-        }
+  private:
+    enum class SystemState : uint8_t {
+        Safe,
+        Dangerous,
+        Alarmed,
+    };
 
-        if (isTimerExpired()) {
-            std::cout << "The gas stove has been ON for a long time and there is cookware on it but the person is not "
-                         "present."
-                      << '\n';
-        }
-        break;
+    SystemState systemState_ = SystemState::Safe;
+    steady_clock::time_point startTimer_ = steady_clock::now();
+
+    [[nodiscard]] static bool isDangerous(const StoveState stoveState, const PersonState personState) {
+        return stoveState == StoveState::On && personState == PersonState::Absent;
     }
+
+    [[nodiscard]] bool isTimerExpired() const {
+        const auto current = steady_clock::now();
+        const auto elapsed = duration_cast<seconds>(current - startTimer_).count();
+        return elapsed >= ALARM_THRESHOLD_SEC;
     }
-}
-} // namespace gas_mon
+};
+
+} // namespace stove_monitor
 
 namespace tests {
-using namespace gas_mon;
+using namespace stove_monitor;
 
-void Given_Stove_Idle_When_Stove_On_And_Cookware_And_Person_Then_Stove_Cooking() {
-    timerStart = steady_clock::now();
-    stoveState = StoveState::Idle;
+void Given_Stove_Off_When_Stove_On_And_Person_Absent_Then_Returns_Event_DangerousEntered() {
+    StoveMonitor stoveMonitor;
 
-    updateState(true, true, true);
+    const auto event = stoveMonitor.updateState(StoveState::On, PersonState::Absent);
 
-    assert(stoveState == StoveState::Cooking);
+    assert(event == Event::DangerousEntered);
 }
 
-void Given_Stove_Idle_When_Stove_Off_And_No_Cookware_And_No_Person_Then_Stove_Idle() {
-    timerStart = steady_clock::now();
-    stoveState = StoveState::Idle;
+void Given_Stove_On_When_Stove_Off_And_Person_Absent_Then_Returns_Event_DangerousCanceled() {
+    StoveMonitor stoveMonitor;
 
-    updateState(false, false, false);
+    const auto event1 = stoveMonitor.updateState(StoveState::On, PersonState::Absent);
+    assert(event1 == Event::DangerousEntered);
 
-    assert(stoveState == StoveState::Idle);
+    const auto event2 = stoveMonitor.updateState(StoveState::Off, PersonState::Absent);
+    assert(event2 == Event::DangerousCleared);
 }
 
-void Given_Stove_Idle_When_Stove_On_And_No_Cookware_And_No_Person_Then_Stove_Idle() {
-    timerStart = steady_clock::now();
-    stoveState = StoveState::Idle;
+void Given_Stove_On_When_Stove_On_And_Person_Present_Then_Returns_Event_DangerousCanceled() {
+    StoveMonitor stoveMonitor;
 
-    updateState(true, false, false);
+    const auto event1 = stoveMonitor.updateState(StoveState::On, PersonState::Absent);
+    assert(event1 == Event::DangerousEntered);
 
-    assert(stoveState == StoveState::Idle);
+    const auto event2 = stoveMonitor.updateState(StoveState::On, PersonState::Present);
+    assert(event2 == Event::DangerousCleared);
 }
 
-void Given_Stove_Cooking_When_Stove_Off_Or_No_Cookware_Then_Stove_Idle() {
-    // Scenario 1: the gas stove is off and there is cookware not present on it.
-    timerStart = steady_clock::now();
-    stoveState = StoveState::Cooking;
+void Given_StoveMonitor_EnteredSomeState_When_State_Not_Changed_Then_Returns_Event_None() {
+    StoveMonitor stoveMonitor;
 
-    updateState(false, false, false);
+    const auto event1 = stoveMonitor.updateState(StoveState::On, PersonState::Absent);
+    assert(event1 == Event::DangerousEntered);
 
-    assert(stoveState == StoveState::Idle);
-
-    // Scenario 2: the gas stove is on and there is cookware not present on it.
-    timerStart = steady_clock::now();
-    stoveState = StoveState::Cooking;
-
-    updateState(true, false, false);
-
-    // Scenario 3: the gas stove is off and there is cookware present on it.
-    timerStart = steady_clock::now();
-    stoveState = StoveState::Cooking;
-
-    updateState(false, true, false);
-
-    assert(stoveState == StoveState::Idle);
-}
-
-void Given_Gas_Stove_Cooking_When_Stove_On_And_Cookware_Then_Stove_Cooking() {
-    timerStart = steady_clock::now();
-    stoveState = StoveState::Cooking;
-
-    updateState(true, true, true);
-    assert(stoveState == StoveState::Cooking);
+    const auto event2 = stoveMonitor.updateState(StoveState::On, PersonState::Absent);
+    assert(event2 == Event::None);
 }
 
 } // namespace tests
 
 int main() {
-    tests::Given_Stove_Idle_When_Stove_On_And_Cookware_And_Person_Then_Stove_Cooking();
-    tests::Given_Stove_Idle_When_Stove_On_And_No_Cookware_And_No_Person_Then_Stove_Idle();
-    tests::Given_Stove_Idle_When_Stove_Off_And_No_Cookware_And_No_Person_Then_Stove_Idle();
-    tests::Given_Stove_Cooking_When_Stove_Off_Or_No_Cookware_Then_Stove_Idle();
-    tests::Given_Gas_Stove_Cooking_When_Stove_On_And_Cookware_Then_Stove_Cooking();
-
-    /* The timer does not make sense as a standalone process. It should be started only when an event
-     * occurs(event-based-design)
-    Scenario/events:
-     * 1. The stove is ON, no cookware is on burner, and no person is present -> start the timer
-     * 2. The stove is ON, cookware is on the burner with flame, and no person is present -> start the timer
-     * 3. The stove is ON, cookware is on the burner with flame, and a person appears -> reset the timer?
-     * (Needs design consideration to avoid overheating food).
-     * 4. The stove is off -> stop the timer.
-
-     * The timer can have the following states:
-     * Running - when a key event occurs
-     * Reset - when a recovery event occurs
-     * Stopped - no activity
-     */
+    tests::Given_Stove_Off_When_Stove_On_And_Person_Absent_Then_Returns_Event_DangerousEntered();
+    tests::Given_Stove_On_When_Stove_Off_And_Person_Absent_Then_Returns_Event_DangerousCanceled();
+    tests::Given_Stove_On_When_Stove_On_And_Person_Present_Then_Returns_Event_DangerousCanceled();
+    tests::Given_StoveMonitor_EnteredSomeState_When_State_Not_Changed_Then_Returns_Event_None();
 
     return 0;
 }
