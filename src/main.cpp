@@ -1,6 +1,6 @@
 #include <cassert>
 #include <chrono>
-#include <thread>
+#include <cstdint>
 
 using namespace std::chrono;
 
@@ -16,16 +16,18 @@ enum class Event : uint8_t {
     AlarmCleared,
 };
 
-constexpr int ALARM_THRESHOLD_SEC = 15;
+constexpr steady_clock::duration ALARM_THRESHOLD = 15s;
 
 class StoveMonitor {
   public:
-    [[nodiscard]] Event updateState(const StoveState stoveState, const PersonState personState) {
+    [[nodiscard]] Event
+    process(const StoveState stoveState, const PersonState personState, const steady_clock::time_point currentTime) {
+
         const auto dangerous = isDangerous(stoveState, personState);
 
         if (systemState_ == SystemState::Safe && dangerous) {
             systemState_ = SystemState::Dangerous;
-            startTimer_ = steady_clock::now();
+            dangerStartTime_ = currentTime;
 
             return Event::DangerousEntered;
         }
@@ -35,7 +37,7 @@ class StoveMonitor {
             return Event::DangerousCleared;
         }
 
-        if (systemState_ == SystemState::Dangerous && isTimerExpired()) {
+        if (systemState_ == SystemState::Dangerous && isTimerExpired(currentTime)) {
             systemState_ = SystemState::Alarmed;
 
             return Event::AlarmStarted;
@@ -57,16 +59,14 @@ class StoveMonitor {
     };
 
     SystemState systemState_ = SystemState::Safe;
-    steady_clock::time_point startTimer_ = steady_clock::now();
+    steady_clock::time_point dangerStartTime_;
 
     [[nodiscard]] static bool isDangerous(const StoveState stoveState, const PersonState personState) {
         return stoveState == StoveState::On && personState == PersonState::Absent;
     }
 
-    [[nodiscard]] bool isTimerExpired() const {
-        const auto current = steady_clock::now();
-        const auto elapsed = duration_cast<seconds>(current - startTimer_).count();
-        return elapsed >= ALARM_THRESHOLD_SEC;
+    [[nodiscard]] bool isTimerExpired(const steady_clock::time_point currentTime) const {
+        return currentTime - dangerStartTime_ >= ALARM_THRESHOLD;
     }
 };
 
@@ -78,48 +78,117 @@ using namespace stove_monitor;
 void Given_Stove_Off_When_Stove_On_And_Person_Absent_Then_Returns_Event_DangerousEntered() {
     StoveMonitor stoveMonitor;
 
-    const auto event = stoveMonitor.updateState(StoveState::On, PersonState::Absent);
+    const auto event = stoveMonitor.process(StoveState::On, PersonState::Absent, steady_clock::now());
 
     assert(event == Event::DangerousEntered);
 }
 
-void Given_Stove_On_When_Stove_Off_And_Person_Absent_Then_Returns_Event_DangerousCanceled() {
+void Given_Stove_On_When_Stove_Off_And_Person_Absent_Then_Returns_Event_DangerousCleared() {
     StoveMonitor stoveMonitor;
+    const auto t0 = steady_clock::now();
 
-    const auto event1 = stoveMonitor.updateState(StoveState::On, PersonState::Absent);
-    assert(event1 == Event::DangerousEntered);
+    // Given_Stove_On
+    auto event = stoveMonitor.process(StoveState::On, PersonState::Absent, t0);
 
-    const auto event2 = stoveMonitor.updateState(StoveState::Off, PersonState::Absent);
-    assert(event2 == Event::DangerousCleared);
+    assert(event == Event::DangerousEntered);
+
+    // Stove off
+    event = stoveMonitor.process(StoveState::Off, PersonState::Absent, t0);
+
+    assert(event == Event::DangerousCleared);
 }
 
-void Given_Stove_On_When_Stove_On_And_Person_Present_Then_Returns_Event_DangerousCanceled() {
+void Given_Stove_On_When_Stove_On_And_Person_Present_Then_Returns_Event_DangerousCleared() {
     StoveMonitor stoveMonitor;
+    const auto currentTime = steady_clock::now();
 
-    const auto event1 = stoveMonitor.updateState(StoveState::On, PersonState::Absent);
-    assert(event1 == Event::DangerousEntered);
+    // Given Stove_On
+    auto event = stoveMonitor.process(StoveState::On, PersonState::Absent, currentTime);
 
-    const auto event2 = stoveMonitor.updateState(StoveState::On, PersonState::Present);
-    assert(event2 == Event::DangerousCleared);
+    assert(event == Event::DangerousEntered);
+
+    // Person present
+    event = stoveMonitor.process(StoveState::On, PersonState::Present, currentTime);
+
+    assert(event == Event::DangerousCleared);
 }
 
 void Given_StoveMonitor_EnteredSomeState_When_State_Not_Changed_Then_Returns_Event_None() {
     StoveMonitor stoveMonitor;
+    const auto t0 = steady_clock::now();
 
-    const auto event1 = stoveMonitor.updateState(StoveState::On, PersonState::Absent);
-    assert(event1 == Event::DangerousEntered);
+    // Enter in state
+    auto event = stoveMonitor.process(StoveState::On, PersonState::Absent, t0);
+    assert(event == Event::DangerousEntered);
 
-    const auto event2 = stoveMonitor.updateState(StoveState::On, PersonState::Absent);
-    assert(event2 == Event::None);
+    event = stoveMonitor.process(StoveState::On, PersonState::Absent, t0);
+    assert(event == Event::None);
+}
+
+void Given_DangerousState_When_TimerExpires_Then_Returns_Event_AlarmStarted() {
+    StoveMonitor stoveMonitor;
+    const auto t0 = steady_clock::now();
+
+    // Enter in to dangerous
+    auto event = stoveMonitor.process(StoveState::On, PersonState::Absent, t0);
+
+    assert(event == Event::DangerousEntered);
+
+    // Simulate AlarmedStarted
+    event = stoveMonitor.process(StoveState::On, PersonState::Absent, t0 + ALARM_THRESHOLD);
+
+    assert(event == Event::AlarmStarted);
+}
+
+void Given_AlarmedState_When_DangerCleared_Then_Returns_AlarmCleared() {
+    StoveMonitor stoveMonitor;
+    auto t0 = steady_clock::now();
+
+    // DangerEntered
+    auto event = stoveMonitor.process(StoveState::On, PersonState::Absent, t0);
+
+    assert(event == Event::DangerousEntered);
+
+    // Danger duration for reached the alarm threshold
+    event = stoveMonitor.process(StoveState::On, PersonState::Absent, t0 + ALARM_THRESHOLD);
+
+    assert(event == Event::AlarmStarted);
+
+    // Person present
+    event = stoveMonitor.process(StoveState::On, PersonState::Present, t0 + ALARM_THRESHOLD + 1s);
+
+    assert(event == Event::AlarmCleared);
+}
+
+void Given_Danger_Interrupted_When_Danger_Reenters_Then_Alarm_Requires_Full_Timeout() {
+    StoveMonitor stoveMonitor;
+    const auto t0 = steady_clock::now();
+
+    auto event = stoveMonitor.process(StoveState::On, PersonState::Absent, t0);
+    assert(event == Event::DangerousEntered);
+
+    event = stoveMonitor.process(StoveState::On, PersonState::Absent, t0 + ALARM_THRESHOLD - 1s);
+    assert(event == Event::None);
+
+    event = stoveMonitor.process(StoveState::On, PersonState::Present, t0 + ALARM_THRESHOLD - 1s);
+    assert(event == Event::DangerousCleared);
+
+    event = stoveMonitor.process(StoveState::On, PersonState::Absent, t0 + ALARM_THRESHOLD);
+    assert(event == Event::DangerousEntered);
+
+    event = stoveMonitor.process(StoveState::On, PersonState::Absent, t0 + 30s);
+    assert(event == Event::AlarmStarted);
 }
 
 } // namespace tests
 
 int main() {
     tests::Given_Stove_Off_When_Stove_On_And_Person_Absent_Then_Returns_Event_DangerousEntered();
-    tests::Given_Stove_On_When_Stove_Off_And_Person_Absent_Then_Returns_Event_DangerousCanceled();
-    tests::Given_Stove_On_When_Stove_On_And_Person_Present_Then_Returns_Event_DangerousCanceled();
+    tests::Given_Stove_On_When_Stove_Off_And_Person_Absent_Then_Returns_Event_DangerousCleared();
+    tests::Given_Stove_On_When_Stove_On_And_Person_Present_Then_Returns_Event_DangerousCleared();
     tests::Given_StoveMonitor_EnteredSomeState_When_State_Not_Changed_Then_Returns_Event_None();
-
+    tests::Given_DangerousState_When_TimerExpires_Then_Returns_Event_AlarmStarted();
+    tests::Given_AlarmedState_When_DangerCleared_Then_Returns_AlarmCleared();
+    tests::Given_Danger_Interrupted_When_Danger_Reenters_Then_Alarm_Requires_Full_Timeout();
     return 0;
 }
