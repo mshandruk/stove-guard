@@ -33,3 +33,11 @@ target_link_libraries(stove_guard
         PRIVATE
         stove_monitor
 )
+
+option(ENABLE_TESTS "Enable tests" OFF)
+
+if (ENABLE_TESTS)
+    enable_testing()
+    include(cmake/Dependencies.cmake)
+    add_subdirectory(tests)
+endif ()
