@@ -18,20 +18,20 @@ if (EXISTS "${PROJECT_SOURCE_DIR}/external/cpp-infra/cmake/DevTools.cmake")
 endif ()
 
 # ===== Domain layer (static lib) =====
-add_library(stove_monitor STATIC src/StoveMonitor.cpp)
-target_include_directories(stove_monitor
+add_library(stove_guard_lib STATIC src/StoveMonitor.cpp src/DetectionMapper.cpp)
+target_include_directories(stove_guard_lib
         PUBLIC
         ${PROJECT_SOURCE_DIR}/src
 )
-target_link_libraries(stove_monitor PUBLIC
+target_link_libraries(stove_guard_lib PUBLIC
         compile_options
 )
 
 # ===== Application layer =====
-add_executable(stove_guard src/main.cpp)
-target_link_libraries(stove_guard
+add_executable(stove_guard_app src/main.cpp)
+target_link_libraries(stove_guard_app
         PRIVATE
-        stove_monitor
+        stove_guard_lib
 )
 
 option(ENABLE_TESTS "Enable tests" OFF)
