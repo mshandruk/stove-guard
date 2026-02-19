@@ -1,6 +1,6 @@
 set(TEST_TARGET stove_monitor_tests)
 
-add_executable(${TEST_TARGET} StoveMonitorTests.cpp DetectionMapperTests.cpp)
+add_executable(${TEST_TARGET} StoveMonitorTests.cpp DetectionMapperTests.cpp StoveGuardAppTests.cpp)
 
 target_link_libraries(${TEST_TARGET}
         PRIVATE
