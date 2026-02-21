@@ -1,20 +1,22 @@
 #include "StoveGuardApp.h"
 
+#include <cassert>
 #include <chrono>
 
-#include "Detection.h"
 #include "DetectionMapper.h"
 #include "FrameAnalyzer.h"
 #include "StoveMonitor.h"
 
-StoveGuardApp::StoveGuardApp(FrameAnalyzer& frameAnalyzer)
+using namespace std::chrono;
+
+StoveGuardApp::StoveGuardApp(FrameAnalyzer* frameAnalyzer)
         : frameAnalyzer_{frameAnalyzer} {
+    assert(frameAnalyzer_ != nullptr);
 }
 
-Event StoveGuardApp::run() {
-    const auto detection = frameAnalyzer_.analyze(Frame{});
+Event StoveGuardApp::processFrame(const Frame& frame, const steady_clock::time_point currentTime) {
+    const auto detection = frameAnalyzer_->analyze(frame);
     const auto [stoveState, personState] = toDomain(detection);
-    const auto currentTime = std::chrono::steady_clock::now();
 
     return stoveMonitor_.process(stoveState, personState, currentTime);
 }

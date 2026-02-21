@@ -6,11 +6,11 @@
 
 class StoveGuardApp {
   public:
-    explicit StoveGuardApp(FrameAnalyzer& frameAnalyzer);
-    Event run();
+    explicit StoveGuardApp(FrameAnalyzer* frameAnalyzer);
+    Event processFrame(const Frame& frame, std::chrono::steady_clock::time_point currentTime);
 
   private:
     StoveMonitor stoveMonitor_;
-    FrameAnalyzer& frameAnalyzer_;
+    FrameAnalyzer* frameAnalyzer_;
 };
 #endif // STOVEGUARD_STOVEGUARDAPP_H
