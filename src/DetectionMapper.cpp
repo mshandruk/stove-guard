@@ -1,5 +1,6 @@
 #include <utility>
 
+#include "Detection.h"
 #include "DetectionMapper.h"
 #include "StoveMonitor.h"
 
