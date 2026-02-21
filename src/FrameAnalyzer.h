@@ -3,7 +3,7 @@
 
 #include "Detection.h"
 
-struct Frame{};
+struct Frame {};
 
 class FrameAnalyzer {
   public:
