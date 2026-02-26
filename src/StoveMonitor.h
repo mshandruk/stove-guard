@@ -6,6 +6,7 @@
 
 enum class StoveState : uint8_t { On, Off };
 enum class PersonState : uint8_t { Present, Absent };
+using Duration = std::chrono::seconds;
 
 enum class Event : uint8_t {
     None,
@@ -15,12 +16,11 @@ enum class Event : uint8_t {
     AlarmCleared,
 };
 
-constexpr std::chrono::steady_clock::duration ALARM_THRESHOLD = std::chrono::seconds(15);
+constexpr auto ALARM_THRESHOLD = Duration(15);
 
 class StoveMonitor {
   public:
-    [[nodiscard]] Event
-    process(StoveState stoveState, PersonState personState, std::chrono::steady_clock::time_point currentTime);
+    [[nodiscard]] Event process(StoveState stoveState, PersonState personState, Duration delta);
 
   private:
     enum class SystemState : uint8_t {
@@ -30,10 +30,10 @@ class StoveMonitor {
     };
 
     SystemState systemState_ = SystemState::Safe;
-    std::chrono::steady_clock::time_point dangerStartTime_;
+    Duration dangerousDuration_ = Duration::zero();
 
     [[nodiscard]] static bool isDangerous(StoveState stoveState, PersonState personState);
 
-    [[nodiscard]] bool isTimerExpired(std::chrono::steady_clock::time_point currentTime) const;
+    [[nodiscard]] bool isTimerExpired() const noexcept;
 };
 #endif // STOVEGUARD_STOVEMONITOR_H

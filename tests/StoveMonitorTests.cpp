@@ -5,109 +5,93 @@
 #include "StoveMonitor.h"
 
 using namespace std::chrono;
-using namespace std::chrono_literals;
 
-TEST(StoveMonitorTest, Given_Stove_Off_When_Stove_On_And_Person_Absent_Then_Returns_Event_DangerousEntered) {
+TEST(StoveMonitorTest, DangerousEntered_WhenStoveOnAndPersonAbsent) {
     StoveMonitor stoveMonitor;
 
-    const auto event = stoveMonitor.process(StoveState::On, PersonState::Absent, steady_clock::now());
-
+    const auto event = stoveMonitor.process(StoveState::On, PersonState::Absent, seconds{0});
     EXPECT_EQ(event, Event::DangerousEntered);
 }
 
-TEST(StoveMonitorTest, Given_Stove_On_When_Stove_Off_And_Person_Absent_Then_Returns_Event_DangerousCleared) {
+TEST(StoveMonitorTest, DangerousCleared_WhenStoveTurnsOffWhilePersonAbsent) {
     StoveMonitor stoveMonitor;
-    const auto t0 = steady_clock::now();
-
-    // Given_Stove_On
-    auto event = stoveMonitor.process(StoveState::On, PersonState::Absent, t0);
-
+    auto event = stoveMonitor.process(StoveState::On, PersonState::Absent, seconds{0});
     ASSERT_EQ(event, Event::DangerousEntered);
 
-    // Stove off
-    event = stoveMonitor.process(StoveState::Off, PersonState::Absent, t0);
-
+    event = stoveMonitor.process(StoveState::Off, PersonState::Absent, seconds{1});
     EXPECT_EQ(event, Event::DangerousCleared);
 }
 
-TEST(StoveMonitorTest, Given_Stove_On_When_Stove_On_And_Person_Present_Then_Returns_Event_DangerousCleared) {
+TEST(StoveMonitorTest, DangerousCleared_WhenPersonAppearsAfterDangerousEntered) {
     StoveMonitor stoveMonitor;
-    const auto currentTime = steady_clock::now();
 
-    // Given Stove_On
-    auto event = stoveMonitor.process(StoveState::On, PersonState::Absent, currentTime);
-
+    auto event = stoveMonitor.process(StoveState::On, PersonState::Absent, seconds{0});
     ASSERT_EQ(event, Event::DangerousEntered);
 
-    // Person present
-    event = stoveMonitor.process(StoveState::On, PersonState::Present, currentTime);
-
+    event = stoveMonitor.process(StoveState::On, PersonState::Present, seconds{1});
     EXPECT_EQ(event, Event::DangerousCleared);
 }
 
-TEST(StoveMonitorTest, Given_StoveMonitor_EnteredSomeState_When_State_Not_Changed_Then_Returns_Event_None) {
+TEST(StoveMonitorTest, None_WhenStateUnchanged) {
     StoveMonitor stoveMonitor;
-    const auto t0 = steady_clock::now();
 
-    // Enter in state
-    auto event = stoveMonitor.process(StoveState::On, PersonState::Absent, t0);
+    auto event = stoveMonitor.process(StoveState::On, PersonState::Absent, seconds{0});
     ASSERT_EQ(event, Event::DangerousEntered);
 
-    event = stoveMonitor.process(StoveState::On, PersonState::Absent, t0);
+    event = stoveMonitor.process(StoveState::On, PersonState::Absent, seconds{1});
     EXPECT_EQ(event, Event::None);
 }
 
-TEST(StoveMonitorTest, Given_DangerousState_When_TimerExpires_Then_Returns_Event_AlarmStarted) {
+TEST(StoveMonitorTest, AlarmStarted_WhenDangerDurationExceeded) {
     StoveMonitor stoveMonitor;
-    const auto t0 = steady_clock::now();
 
     // Enter in to dangerous
-    auto event = stoveMonitor.process(StoveState::On, PersonState::Absent, t0);
-
+    auto event = stoveMonitor.process(StoveState::On, PersonState::Absent, seconds{0});
     ASSERT_EQ(event, Event::DangerousEntered);
 
     // Simulate AlarmedStarted
-    event = stoveMonitor.process(StoveState::On, PersonState::Absent, t0 + ALARM_THRESHOLD);
-
+    event = stoveMonitor.process(StoveState::On, PersonState::Absent, ALARM_THRESHOLD);
     EXPECT_EQ(event, Event::AlarmStarted);
 }
 
-TEST(StoveMonitorTest, Given_AlarmedState_When_DangerCleared_Then_Returns_AlarmCleared) {
+TEST(StoveMonitorTest, AlarmCleared_WhenPersonAppearsAfterAlarmStarted) {
     StoveMonitor stoveMonitor;
-    const auto t0 = steady_clock::now();
 
-    // DangerEntered
-    auto event = stoveMonitor.process(StoveState::On, PersonState::Absent, t0);
-
+    // Enter to dangerous state
+    auto event = stoveMonitor.process(StoveState::On, PersonState::Absent, seconds{0});
     ASSERT_EQ(event, Event::DangerousEntered);
 
     // Danger duration for reached the alarm threshold
-    event = stoveMonitor.process(StoveState::On, PersonState::Absent, t0 + ALARM_THRESHOLD);
-
+    event = stoveMonitor.process(StoveState::On, PersonState::Absent, ALARM_THRESHOLD);
     ASSERT_EQ(event, Event::AlarmStarted);
 
-    // Person present
-    event = stoveMonitor.process(StoveState::On, PersonState::Present, t0 + ALARM_THRESHOLD + 1s);
-
+    // Person presents
+    event = stoveMonitor.process(StoveState::On, PersonState::Present, ALARM_THRESHOLD + seconds{1});
     EXPECT_EQ(event, Event::AlarmCleared);
 }
 
-TEST(StoveMonitorTest, Given_Danger_Interrupted_When_Danger_Reenters_Then_Alarm_Requires_Full_Timeout) {
+TEST(StoveMonitorTest, AlarmTimeoutRestart_WhenDangerReenters) {
     StoveMonitor stoveMonitor;
-    const auto t0 = steady_clock::now();
 
-    auto event = stoveMonitor.process(StoveState::On, PersonState::Absent, t0);
+    auto event = stoveMonitor.process(StoveState::On, PersonState::Absent, seconds{0});
     ASSERT_EQ(event, Event::DangerousEntered);
 
-    event = stoveMonitor.process(StoveState::On, PersonState::Absent, t0 + ALARM_THRESHOLD - 1s);
-    ASSERT_EQ(event, Event::None);
-
-    event = stoveMonitor.process(StoveState::On, PersonState::Present, t0 + ALARM_THRESHOLD - 1s);
+    event = stoveMonitor.process(StoveState::On, PersonState::Present, ALARM_THRESHOLD - seconds{1});
     ASSERT_EQ(event, Event::DangerousCleared);
 
-    event = stoveMonitor.process(StoveState::On, PersonState::Absent, t0 + ALARM_THRESHOLD);
+    event = stoveMonitor.process(StoveState::On, PersonState::Absent, ALARM_THRESHOLD);
     ASSERT_EQ(event, Event::DangerousEntered);
 
-    event = stoveMonitor.process(StoveState::On, PersonState::Absent, t0 + 30s);
+    event = stoveMonitor.process(StoveState::On, PersonState::Absent, ALARM_THRESHOLD);
     EXPECT_EQ(event, Event::AlarmStarted);
+}
+
+TEST(StoveMonitorTest, NoEffect_WhenSafeStateAndThresholdDelta) {
+    StoveMonitor stoveMonitor;
+
+    auto event = stoveMonitor.process(StoveState::Off, PersonState::Present, seconds{0});
+    ASSERT_EQ(event, Event::None);
+
+    event = stoveMonitor.process(StoveState::Off, PersonState::Present, ALARM_THRESHOLD);
+    EXPECT_EQ(event, Event::None);
 }

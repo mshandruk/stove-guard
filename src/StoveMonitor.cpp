@@ -1,20 +1,12 @@
 #include "StoveMonitor.h"
 
-#include <chrono>
-
-using namespace std::chrono;
-using namespace std::chrono_literals;
-
-Event StoveMonitor::process(
-    const StoveState stoveState,
-    const PersonState personState,
-    const steady_clock::time_point currentTime) {
+Event StoveMonitor::process(const StoveState stoveState, const PersonState personState, const Duration delta) {
 
     const auto dangerous = isDangerous(stoveState, personState);
 
     if (systemState_ == SystemState::Safe && dangerous) {
         systemState_ = SystemState::Dangerous;
-        dangerStartTime_ = currentTime;
+        dangerousDuration_ = Duration{0};
 
         return Event::DangerousEntered;
     }
@@ -24,10 +16,13 @@ Event StoveMonitor::process(
         return Event::DangerousCleared;
     }
 
-    if (systemState_ == SystemState::Dangerous && isTimerExpired(currentTime)) {
-        systemState_ = SystemState::Alarmed;
+    if (systemState_ == SystemState::Dangerous) {
+        dangerousDuration_ += delta;
 
-        return Event::AlarmStarted;
+        if (isTimerExpired()) {
+            systemState_ = SystemState::Alarmed;
+            return Event::AlarmStarted;
+        }
     }
 
     if (systemState_ == SystemState::Alarmed && !dangerous) {
@@ -42,6 +37,6 @@ bool StoveMonitor::isDangerous(const StoveState stoveState, const PersonState pe
     return stoveState == StoveState::On && personState == PersonState::Absent;
 }
 
-bool StoveMonitor::isTimerExpired(const steady_clock::time_point currentTime) const {
-    return currentTime - dangerStartTime_ >= ALARM_THRESHOLD;
+bool StoveMonitor::isTimerExpired() const noexcept {
+    return dangerousDuration_ >= ALARM_THRESHOLD;
 }

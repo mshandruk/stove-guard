@@ -14,9 +14,10 @@ StoveGuardApp::StoveGuardApp(FrameAnalyzer* frameAnalyzer)
     assert(frameAnalyzer_ != nullptr);
 }
 
-Event StoveGuardApp::processFrame(const Frame& frame, const steady_clock::time_point currentTime) {
+Event StoveGuardApp::processFrame(const Frame& frame, const steady_clock::time_point currentTimestamp) {
     const auto detection = frameAnalyzer_->analyze(frame);
     const auto [stoveState, personState] = toDomain(detection);
-
-    return stoveMonitor_.process(stoveState, personState, currentTime);
+    const auto delta = !lastTimestamp_ ? Duration::zero() : duration_cast<Duration>(currentTimestamp - *lastTimestamp_);
+    lastTimestamp_ = currentTimestamp;
+    return stoveMonitor_.process(stoveState, personState, delta);
 }
