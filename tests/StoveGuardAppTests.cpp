@@ -1,9 +1,12 @@
 #include <chrono>
+#include <cstddef>
+#include <vector>
 
 #include <gtest/gtest.h>
 
 #include "Detection.h"
 #include "FrameAnalyzer.h"
+#include "Notifier.h"
 #include "StoveGuardApp.h"
 #include "StoveMonitor.h"
 
@@ -20,13 +23,34 @@ class FakeFrameAnalyzer : public FrameAnalyzer {
     }
 
   private:
-    Detection nextDetection_{false, false};
+    Detection nextDetection_ = Detection{false, false};
+};
+
+class FakeNotifier : public Notifier {
+  public:
+    using Events = std::vector<Event>;
+
+    void notify(const Event event) override {
+        events_.push_back(event);
+    }
+
+    [[nodiscard]] const Events& events() const noexcept {
+        return events_;
+    }
+
+    [[nodiscard]] std::size_t callCount() const noexcept {
+        return events_.size();
+    }
+
+  private:
+    Events events_;
 };
 
 class StoveGuardAppTest : public testing::Test {
   protected:
     FakeFrameAnalyzer analyzer;
-    StoveGuardApp app{&analyzer};
+    FakeNotifier notifier;
+    StoveGuardApp app{analyzer, notifier};
     static constexpr Frame frame{};
 };
 
@@ -108,4 +132,20 @@ TEST_F(StoveGuardAppTest, AlarmRestarted_WhenPersonLeavesAfterClearingAlarm) {
 
     const auto alarmRestartAt = personLeftAt + ALARM_THRESHOLD;
     EXPECT_EQ(app.processFrame(frame, alarmRestartAt), Event::AlarmStarted);
+}
+
+TEST_F(StoveGuardAppTest, Notify_WhenEventIsNotNone) {
+    const auto startAt = steady_clock::now();
+    analyzer.nextDetection({true, false});
+
+    ASSERT_EQ(app.processFrame(frame, startAt), Event::DangerousEntered);
+    ASSERT_EQ(notifier.events().at(0), Event::DangerousEntered);
+
+    const auto alarmAt = startAt + ALARM_THRESHOLD;
+    ASSERT_EQ(app.processFrame(frame, alarmAt), Event::AlarmStarted);
+    EXPECT_EQ(notifier.events().at(1), Event::AlarmStarted);
+
+    ASSERT_EQ(notifier.callCount(), 2);
+    ASSERT_EQ(app.processFrame(frame, alarmAt + seconds{1}), Event::None);
+    EXPECT_EQ(notifier.callCount(), 2);
 }
