@@ -5,6 +5,7 @@
 #include <gtest/gtest.h>
 
 #include "Detection.h"
+#include "Frame.h"
 #include "FrameAnalyzer.h"
 #include "Notifier.h"
 #include "StoveGuardApp.h"

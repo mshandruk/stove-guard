@@ -2,8 +2,7 @@
 #define STOVEGUARD_FRAMEANALYZER_H
 
 #include "Detection.h"
-
-struct Frame {};
+#include "Frame.h"
 
 class FrameAnalyzer {
   public:

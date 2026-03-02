@@ -3,6 +3,7 @@
 #include <chrono>
 
 #include "DetectionMapper.h"
+#include "Frame.h"
 #include "FrameAnalyzer.h"
 #include "Notifier.h"
 #include "StoveMonitor.h"
