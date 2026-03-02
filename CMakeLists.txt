@@ -18,7 +18,12 @@ if (EXISTS "${PROJECT_SOURCE_DIR}/external/cpp-infra/cmake/DevTools.cmake")
 endif ()
 
 # ===== Domain layer (static lib) =====
-add_library(stove_guard_lib STATIC src/StoveMonitor.cpp src/DetectionMapper.cpp src/StoveGuardApp.cpp)
+add_library(stove_guard_lib STATIC
+        src/StoveMonitor.cpp
+        src/DetectionMapper.cpp
+        src/StoveGuardApp.cpp
+        src/ConsoleNotifier.cpp
+)
 target_include_directories(stove_guard_lib
         PUBLIC
         ${PROJECT_SOURCE_DIR}/src
