@@ -5,27 +5,22 @@
 #include "StoveMonitor.h"
 
 void ConsoleNotifier::notify(const Event event) {
+    std::cout << "[ConsoleNotifier]" << '\n';
     switch (event) {
-    case Event::AlarmStarted: {
-        std::cout << "[ConsoleNotifier] " << "AlarmStarted" << '\n';
+    case Event::AlarmStarted:
+        std::cout << "AlarmStarted";
         break;
-    }
-    case Event::AlarmCleared: {
-        std::cout << "[ConsoleNotifier] " << "AlarmCleared" << '\n';
+    case Event::AlarmCleared:
+        std::cout << "AlarmCleared";
         break;
-    }
-
-    case Event::DangerousEntered: {
-        std::cout << "[ConsoleNotifier] " << "DangerousEntered" << '\n';
+    case Event::DangerousEntered:
+        std::cout << "DangerousEntered";
         break;
-    }
-    case Event::DangerousCleared: {
-        std::cout << "[ConsoleNotifier] " << "DangerousCleared" << '\n';
+    case Event::DangerousCleared:
+        std::cout << "DangerousCleared";
         break;
+    case Event::None:
+        return;
     }
-
-    default: {
-        break;
-    }
-    }
+    std::cout << '\n';
 }
