@@ -3,6 +3,7 @@
 
 #include <optional>
 
+#include "Clock.h"
 #include "FrameAnalyzer.h"
 #include "Notifier.h"
 #include "StoveMonitor.h"
@@ -16,13 +17,14 @@ class StoveGuardApp {
 
     ~StoveGuardApp() = default;
 
-    StoveGuardApp(FrameAnalyzer& frameAnalyzer, Notifier& notifier);
-    Event processFrame(const Frame& frame, std::chrono::steady_clock::time_point currentTimestamp);
+    StoveGuardApp(FrameAnalyzer& frameAnalyzer, Notifier& notifier, Clock& clock);
+    Event processFrame(const Frame& frame);
 
   private:
     std::optional<std::chrono::steady_clock::time_point> lastTimestamp_;
     StoveMonitor stoveMonitor_;
     FrameAnalyzer& frameAnalyzer_;
     Notifier& notifier_;
+    Clock& clock_;
 };
 #endif // STOVEGUARD_STOVEGUARDAPP_H

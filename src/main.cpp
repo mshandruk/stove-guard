@@ -3,6 +3,7 @@
 #include <optional>
 #include <thread>
 
+#include "Clock.h"
 #include "ConsoleNotifier.h"
 #include "Detection.h"
 #include "Frame.h"
@@ -56,7 +57,7 @@ class StoveGuardRunner {
 
     void run() {
         while (const auto frame = frameSource_.getFrame()) {
-            app_.processFrame(*frame, std::chrono::steady_clock::now());
+            app_.processFrame(*frame);
         }
     }
 
@@ -65,11 +66,21 @@ class StoveGuardRunner {
     StoveGuardApp& app_;
 };
 
+class RealClock final : public Clock {
+  public:
+    [[nodiscard]]
+    std::chrono::steady_clock::time_point getTime() const override {
+        return std::chrono::steady_clock::now();
+    }
+};
+
 int main() {
+
     FakeFrameAnalyzer frameAnalyzer;
     TimerFrameSource frameSource;
     ConsoleNotifier consoleNotifier;
-    StoveGuardApp app{frameAnalyzer, consoleNotifier};
+    RealClock clock;
+    StoveGuardApp app{frameAnalyzer, consoleNotifier, clock};
     StoveGuardRunner runner(frameSource, app);
     runner.run();
 
