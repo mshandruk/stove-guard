@@ -1,4 +1,5 @@
 #include <chrono>
+#include <cstddef>
 #include <optional>
 #include <thread>
 
@@ -9,18 +10,26 @@
 #include "FrameSource.h"
 #include "StoveGuardApp.h"
 
-class StubFrameAnalyzer final : public FrameAnalyzer {
+class FakeFrameAnalyzer final : public FrameAnalyzer {
   public:
     Detection analyze([[maybe_unused]] const Frame& frame) override {
-        return nextDetection_;
-    }
+        ++detectionCount_;
 
-    void nextDetection(const Detection detection) {
-        nextDetection_ = detection;
+        if (detectionCount_ <= 4) {
+            return {false, true};
+        }
+        if (detectionCount_ <= 20) {
+            return {true, false};
+        }
+        if (detectionCount_ <= 25) {
+            return {true, true};
+        }
+
+        return {false, true};
     }
 
   private:
-    Detection nextDetection_ = Detection{false, false};
+    std::size_t detectionCount_ = 0;
 };
 
 class TimerFrameSource final : public FrameSource {
@@ -32,35 +41,37 @@ class TimerFrameSource final : public FrameSource {
     }
 };
 
+class StoveGuardRunner {
+  public:
+    StoveGuardRunner(FrameSource& frameSource, StoveGuardApp& app)
+            : frameSource_{frameSource},
+              app_{app} {
+    }
+
+    StoveGuardRunner(const StoveGuardRunner&) = delete;
+    StoveGuardRunner& operator=(const StoveGuardRunner&) = delete;
+    StoveGuardRunner(StoveGuardRunner&&) = delete;
+    StoveGuardRunner& operator=(StoveGuardRunner&&) = delete;
+    ~StoveGuardRunner() = default;
+
+    void run() {
+        while (const auto frame = frameSource_.getFrame()) {
+            app_.processFrame(*frame, std::chrono::steady_clock::now());
+        }
+    }
+
+  private:
+    FrameSource& frameSource_;
+    StoveGuardApp& app_;
+};
+
 int main() {
-    StubFrameAnalyzer frameAnalyzer;
+    FakeFrameAnalyzer frameAnalyzer;
     TimerFrameSource frameSource;
     ConsoleNotifier consoleNotifier;
     StoveGuardApp app{frameAnalyzer, consoleNotifier};
-
-    constexpr int framesCount = 20;
-    for (int i = 1; i <= framesCount; ++i) {
-        switch (i) {
-        case 3:
-            frameAnalyzer.nextDetection({true, false});
-            break;
-        case 5:
-            frameAnalyzer.nextDetection({true, true});
-            break;
-        case framesCount: {
-            frameAnalyzer.nextDetection({false, true});
-            break;
-        }
-        default:
-            frameAnalyzer.nextDetection({true, false});
-            break;
-        }
-
-        if (const auto frame = frameSource.getFrame()) {
-            const auto currentTimestamp = std::chrono::steady_clock::now();
-            app.processFrame(*frame, currentTimestamp);
-        }
-    }
+    StoveGuardRunner runner(frameSource, app);
+    runner.run();
 
     return 0;
 }
