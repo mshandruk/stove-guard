@@ -8,17 +8,37 @@ such as unattended cooking or forgotten food.
 
 # Build Instructions
 
-### Build with Tests
+## Configure(DEBUG with tests)
 
 ```bash
-cmake -B build -DCMAKE_BUILD_TYPE=Debug -DENABLE_TESTS=ON
+cmake -B build -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTS=ON
+```
+
+### Build
+
+```
 cmake --build build
 ```
 
-#### Run tests
+### Run tests
 
 ```bash
 ctest --output-on-failure --test-dir build/
+```
+
+## Build demo application
+
+```bash
+cmake -B build -DCMAKE_BUILD_TYPE=Release -DBUILD_DEMO=ON
+```
+### Build
+
+```bash
+cmake --build build
+```
+### Run
+```bash
+./bin/stove_guard_demo
 ```
 
 ## License
