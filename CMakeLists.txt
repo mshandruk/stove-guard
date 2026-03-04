@@ -8,6 +8,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/bin)
 
 option(BUILD_DEMO "Build demo application" ON)
+option(BUILD_TESTS "Build tests" OFF)
 
 # Dev tools
 if (EXISTS "${PROJECT_SOURCE_DIR}/external/cpp-infra/cmake/DevTools.cmake")
@@ -34,9 +35,7 @@ target_link_libraries(stove_guard_lib PUBLIC
         compile_options
 )
 
-option(ENABLE_TESTS "Enable tests" OFF)
-
-if (ENABLE_TESTS)
+if (BUILD_TESTS)
     enable_testing()
     include(cmake/Dependencies.cmake)
     add_subdirectory(tests)
