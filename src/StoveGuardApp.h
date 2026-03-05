@@ -17,7 +17,7 @@ class StoveGuardApp {
 
     ~StoveGuardApp() = default;
 
-    StoveGuardApp(FrameAnalyzer& frameAnalyzer, Notifier& notifier, Clock& clock);
+    StoveGuardApp(Duration alarmThreshold, FrameAnalyzer& frameAnalyzer, Notifier& notifier, Clock& clock);
     Event processFrame(const Frame& frame);
 
   private:

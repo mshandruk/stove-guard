@@ -1,7 +1,10 @@
 #include <chrono>
 #include <cstddef>
+#include <iostream>
 #include <optional>
 #include <thread>
+#include <utility>
+#include <vector>
 
 #include "Clock.h"
 #include "ConsoleNotifier.h"
@@ -10,27 +13,32 @@
 #include "FrameAnalyzer.h"
 #include "FrameSource.h"
 #include "StoveGuardApp.h"
+constexpr auto ALARM_THRESHOLD = std::chrono::seconds{2};
 
 class FakeFrameAnalyzer final : public FrameAnalyzer {
   public:
     Detection analyze([[maybe_unused]] const Frame& frame) override {
-        ++detectionCount_;
-
-        if (detectionCount_ <= 4) {
-            return {false, true};
-        }
-        if (detectionCount_ <= 20) {
-            return {true, false};
-        }
-        if (detectionCount_ <= 25) {
-            return {true, true};
+        if (step_ >= scenario_.size()) {
+            std::cout << "[FakeFrameAnalyzer] Scenario ended. Defaulting to OFF/Absent\n";
+            return {false, false};
         }
 
-        return {false, true};
+        const auto [detection, label] = scenario_.at(step_++);
+        std::cout << "[FakeFrameAnalyzer] Step " << step_ << ": " << label << "\n";
+        return {detection.flameDetected, detection.personDetected};
     }
 
   private:
-    std::size_t detectionCount_ = 0;
+    std::vector<std::pair<Detection, std::string_view>> scenario_ = {
+        {{false, true}, "Stove is OFF and person is present"},
+        {{true, false}, "Stove is ON and person is absent"},
+        {{true, true}, "Stove is ON and person is appears"},
+        {{true, false}, "Stove is ON and person is absent"},
+        {{true, false}, "Stove is ON and person is absent"},
+        {{true, false}, "Stove is ON and person is absent"},
+        {{true, true}, "Stove is ON and person is appears"},
+    };
+    std::size_t step_ = 0;
 };
 
 class TimerFrameSource final : public FrameSource {
@@ -80,7 +88,8 @@ int main() {
     TimerFrameSource frameSource;
     ConsoleNotifier consoleNotifier;
     RealClock clock;
-    StoveGuardApp app{frameAnalyzer, consoleNotifier, clock};
+
+    StoveGuardApp app{ALARM_THRESHOLD, frameAnalyzer, consoleNotifier, clock};
     StoveGuardRunner runner(frameSource, app);
     runner.run();
 

@@ -16,13 +16,14 @@ enum class Event : uint8_t {
     AlarmCleared,
 };
 
-constexpr auto ALARM_THRESHOLD = Duration(15);
-
 class StoveMonitor {
   public:
+    explicit StoveMonitor(Duration alarmThreshold);
+
     [[nodiscard]] Event process(StoveState stoveState, PersonState personState, Duration delta);
 
   private:
+    Duration alarmThreshold_;
     enum class SystemState : uint8_t {
         Safe,
         Dangerous,

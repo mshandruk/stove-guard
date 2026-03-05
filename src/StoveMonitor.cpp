@@ -1,5 +1,9 @@
 #include "StoveMonitor.h"
 
+StoveMonitor::StoveMonitor(const Duration alarmThreshold)
+        : alarmThreshold_{alarmThreshold} {
+}
+
 Event StoveMonitor::process(const StoveState stoveState, const PersonState personState, const Duration delta) {
 
     const auto dangerous = isDangerous(stoveState, personState);
@@ -38,5 +42,5 @@ bool StoveMonitor::isDangerous(const StoveState stoveState, const PersonState pe
 }
 
 bool StoveMonitor::isTimerExpired() const noexcept {
-    return dangerousDuration_ >= ALARM_THRESHOLD;
+    return dangerousDuration_ >= alarmThreshold_;
 }

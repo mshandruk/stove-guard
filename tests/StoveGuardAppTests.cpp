@@ -4,6 +4,7 @@
 
 #include <gtest/gtest.h>
 
+#include "Clock.h"
 #include "Detection.h"
 #include "Frame.h"
 #include "FrameAnalyzer.h"
@@ -71,7 +72,8 @@ class StoveGuardAppTest : public testing::Test {
     FakeFrameAnalyzer analyzer;
     FakeNotifier notifier;
     FakeClock clock;
-    StoveGuardApp app{analyzer, notifier, clock};
+    Duration alarmThreshold = seconds{15};
+    StoveGuardApp app{alarmThreshold, analyzer, notifier, clock};
     static constexpr Frame frame{};
 };
 
@@ -94,7 +96,7 @@ TEST_F(StoveGuardAppTest, AlarmStarted_WhenNoPersonForAlarmThreshold) {
     analyzer.nextDetection({true, false});
     ASSERT_EQ(app.processFrame(frame), Event::DangerousEntered);
 
-    clock.advance(ALARM_THRESHOLD);
+    clock.advance(alarmThreshold);
     EXPECT_EQ(app.processFrame(frame), Event::AlarmStarted);
 }
 
@@ -102,10 +104,10 @@ TEST_F(StoveGuardAppTest, AlarmCanceled_WhenPersonAppearsAfterAlarm) {
     analyzer.nextDetection({true, false});
     ASSERT_EQ(app.processFrame(frame), Event::DangerousEntered);
 
-    clock.advance(ALARM_THRESHOLD);
+    clock.advance(alarmThreshold);
     ASSERT_EQ(app.processFrame(frame), Event::AlarmStarted);
 
-    clock.advance(ALARM_THRESHOLD + seconds{1});
+    clock.advance(alarmThreshold + seconds{1});
     analyzer.nextDetection({true, true});
     EXPECT_EQ(app.processFrame(frame), Event::AlarmCleared);
 }
@@ -115,10 +117,10 @@ TEST_F(StoveGuardAppTest, AlarmNotStarted_WhenPersonAppearsBeforeAlarm) {
     analyzer.nextDetection({true, false});
     ASSERT_EQ(app.processFrame(frame), Event::DangerousEntered);
 
-    clock.advance(ALARM_THRESHOLD - seconds{1});
+    clock.advance(alarmThreshold - seconds{1});
     ASSERT_EQ(app.processFrame(frame), Event::None);
 
-    clock.advance(ALARM_THRESHOLD);
+    clock.advance(alarmThreshold);
     analyzer.nextDetection({true, true});
     EXPECT_EQ(app.processFrame(frame), Event::DangerousCleared);
 }
@@ -127,7 +129,7 @@ TEST_F(StoveGuardAppTest, AlarmRestarted_WhenPersonLeavesAfterClearingAlarm) {
     analyzer.nextDetection({true, false});
     ASSERT_EQ(app.processFrame(frame), Event::DangerousEntered);
 
-    clock.advance(ALARM_THRESHOLD);
+    clock.advance(alarmThreshold);
     ASSERT_EQ(app.processFrame(frame), Event::AlarmStarted);
 
     analyzer.nextDetection({true, true});
@@ -137,7 +139,7 @@ TEST_F(StoveGuardAppTest, AlarmRestarted_WhenPersonLeavesAfterClearingAlarm) {
     analyzer.nextDetection({true, false});
     ASSERT_EQ(app.processFrame(frame), Event::DangerousEntered);
 
-    clock.advance(ALARM_THRESHOLD);
+    clock.advance(alarmThreshold);
     EXPECT_EQ(app.processFrame(frame), Event::AlarmStarted);
 }
 
@@ -147,7 +149,7 @@ TEST_F(StoveGuardAppTest, Notify_WhenEventIsNotNone) {
     ASSERT_EQ(app.processFrame(frame), Event::DangerousEntered);
     ASSERT_EQ(notifier.events().at(0), Event::DangerousEntered);
 
-    clock.advance(ALARM_THRESHOLD);
+    clock.advance(alarmThreshold);
     ASSERT_EQ(app.processFrame(frame), Event::AlarmStarted);
     EXPECT_EQ(notifier.events().at(1), Event::AlarmStarted);
 

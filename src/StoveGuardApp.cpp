@@ -11,8 +11,13 @@
 
 using namespace std::chrono;
 
-StoveGuardApp::StoveGuardApp(FrameAnalyzer& frameAnalyzer, Notifier& notifier, Clock& clock)
-        : frameAnalyzer_{frameAnalyzer},
+StoveGuardApp::StoveGuardApp(
+    const Duration alarmThreshold,
+    FrameAnalyzer& frameAnalyzer,
+    Notifier& notifier,
+    Clock& clock)
+        : stoveMonitor_{alarmThreshold},
+          frameAnalyzer_{frameAnalyzer},
           notifier_{notifier},
           clock_{clock} {
 }
