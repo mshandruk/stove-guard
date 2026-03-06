@@ -5,10 +5,8 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/bin)
-
-option(BUILD_DEMO "Build demo application" ON)
 option(BUILD_TESTS "Build tests" OFF)
+option(BUILD_DEMO "Build demo application" ON)
 
 # Dev tools
 if (EXISTS "${PROJECT_SOURCE_DIR}/external/cpp-infra/cmake/DevTools.cmake")
