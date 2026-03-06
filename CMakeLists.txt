@@ -25,6 +25,8 @@ add_library(stove_guard_lib STATIC
         src/StoveGuardApp.cpp
         src/ConsoleNotifier.cpp
         src/FrameTimer.cpp
+        src/RealClock.cpp
+        src/StoveGuardRunner.cpp
 )
 target_include_directories(stove_guard_lib
         PUBLIC

@@ -2,18 +2,20 @@
 #include <cstddef>
 #include <iostream>
 #include <optional>
+#include <string_view>
 #include <thread>
 #include <utility>
 #include <vector>
 
-#include "Clock.h"
 #include "ConsoleNotifier.h"
 #include "Detection.h"
 #include "Frame.h"
 #include "FrameAnalyzer.h"
 #include "FrameSource.h"
 #include "FrameTimer.h"
+#include "RealClock.h"
 #include "StoveGuardApp.h"
+#include "StoveGuardRunner.h"
 
 constexpr auto ALARM_THRESHOLD = std::chrono::seconds{2};
 
@@ -49,38 +51,6 @@ class TimerFrameSource final : public FrameSource {
     std::optional<Frame> getFrame() override {
         std::this_thread::sleep_for(std::chrono::seconds(1));
         return Frame{};
-    }
-};
-
-class StoveGuardRunner {
-  public:
-    StoveGuardRunner(FrameSource& frameSource, StoveGuardApp& app)
-            : frameSource_{frameSource},
-              app_{app} {
-    }
-
-    StoveGuardRunner(const StoveGuardRunner&) = delete;
-    StoveGuardRunner& operator=(const StoveGuardRunner&) = delete;
-    StoveGuardRunner(StoveGuardRunner&&) = delete;
-    StoveGuardRunner& operator=(StoveGuardRunner&&) = delete;
-    ~StoveGuardRunner() = default;
-
-    void run() {
-        while (const auto frame = frameSource_.getFrame()) {
-            app_.processFrame(*frame);
-        }
-    }
-
-  private:
-    FrameSource& frameSource_;
-    StoveGuardApp& app_;
-};
-
-class RealClock final : public Clock {
-  public:
-    [[nodiscard]]
-    std::chrono::steady_clock::time_point getTime() const override {
-        return std::chrono::steady_clock::now();
     }
 };
 
