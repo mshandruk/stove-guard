@@ -76,7 +76,7 @@ class StoveGuardAppTest : public testing::Test {
     Duration alarmThreshold = seconds{15};
     FrameTimer frameTimer{clock};
     StoveGuardApp app{alarmThreshold, analyzer, notifier, frameTimer};
-    static constexpr Frame frame{};
+    Frame frame{};
 };
 
 TEST_F(StoveGuardAppTest, DangerousEntered_WhenStoveOnAndNoPerson) {

@@ -7,6 +7,9 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 option(BUILD_TESTS "Build tests" OFF)
 option(BUILD_DEMO "Build demo application" ON)
+option(BUILD_VIDEO_DEMO "Build video demo application" ON)
+
+find_package(OpenCV REQUIRED)
 
 # Dev tools
 if (EXISTS "${PROJECT_SOURCE_DIR}/external/cpp-infra/cmake/DevTools.cmake")
@@ -31,9 +34,12 @@ add_library(stove_guard_lib STATIC
 target_include_directories(stove_guard_lib
         PUBLIC
         ${PROJECT_SOURCE_DIR}/src
+        ${OpenCV_INCLUDE_DIRS}
 )
+
 target_link_libraries(stove_guard_lib PUBLIC
         compile_options
+        ${OpenCV_LIBS}
 )
 
 if (BUILD_TESTS)
@@ -44,4 +50,8 @@ endif ()
 
 if (BUILD_DEMO)
     add_subdirectory(apps/demo)
+endif ()
+
+if (BUILD_VIDEO_DEMO)
+    add_subdirectory(apps/video_demo)
 endif ()
