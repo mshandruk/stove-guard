@@ -12,7 +12,9 @@
 #include "Frame.h"
 #include "FrameAnalyzer.h"
 #include "FrameSource.h"
+#include "FrameTimer.h"
 #include "StoveGuardApp.h"
+
 constexpr auto ALARM_THRESHOLD = std::chrono::seconds{2};
 
 class FakeFrameAnalyzer final : public FrameAnalyzer {
@@ -88,8 +90,9 @@ int main() {
     TimerFrameSource frameSource;
     ConsoleNotifier consoleNotifier;
     RealClock clock;
+    FrameTimer deltaFrame{clock};
 
-    StoveGuardApp app{ALARM_THRESHOLD, frameAnalyzer, consoleNotifier, clock};
+    StoveGuardApp app{ALARM_THRESHOLD, frameAnalyzer, consoleNotifier, deltaFrame};
     StoveGuardRunner runner(frameSource, app);
     runner.run();
 

@@ -8,6 +8,7 @@
 #include "Detection.h"
 #include "Frame.h"
 #include "FrameAnalyzer.h"
+#include "FrameTimer.h"
 #include "Notifier.h"
 #include "StoveGuardApp.h"
 #include "StoveMonitor.h"
@@ -73,7 +74,8 @@ class StoveGuardAppTest : public testing::Test {
     FakeNotifier notifier;
     FakeClock clock;
     Duration alarmThreshold = seconds{15};
-    StoveGuardApp app{alarmThreshold, analyzer, notifier, clock};
+    FrameTimer frameTimer{clock};
+    StoveGuardApp app{alarmThreshold, analyzer, notifier, frameTimer};
     static constexpr Frame frame{};
 };
 

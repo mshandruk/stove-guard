@@ -26,6 +26,7 @@ add_library(stove_guard_lib STATIC
         src/DetectionMapper.cpp
         src/StoveGuardApp.cpp
         src/ConsoleNotifier.cpp
+        src/FrameTimer.cpp
 )
 target_include_directories(stove_guard_lib
         PUBLIC
