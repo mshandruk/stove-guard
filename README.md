@@ -31,14 +31,35 @@ ctest --output-on-failure --test-dir build/
 ```bash
 cmake -B build -DCMAKE_BUILD_TYPE=Release -DBUILD_DEMO=ON
 ```
+
 ### Build
 
 ```bash
 cmake --build build
 ```
+
 ### Run
+
 ```bash
-./bin/stove_guard_demo
+./build/apps/demo/stove_guard_demo
+```
+
+## Build video demo application
+
+```bash
+cmake -B build -DCMAKE_BUILD_TYPE=Release -DBUILD_VIDEO_DEMO=ON
+```
+
+### Build
+
+```bash
+cmake --build build
+```
+
+### Run
+
+```bash
+./build/apps/video_demo/stove_guard_video_demo
 ```
 
 ## License
