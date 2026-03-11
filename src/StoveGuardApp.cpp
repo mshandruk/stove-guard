@@ -1,27 +1,20 @@
 #include "StoveGuardApp.h"
 
+#include "Detection.h"
 #include "DetectionMapper.h"
-#include "Frame.h"
-#include "FrameAnalyzer.h"
 #include "FrameTimer.h"
 #include "Notifier.h"
 #include "StoveMonitor.h"
 
 using namespace std::chrono;
 
-StoveGuardApp::StoveGuardApp(
-    const Duration alarmThreshold,
-    FrameAnalyzer& frameAnalyzer,
-    Notifier& notifier,
-    FrameTimer& frameTimer)
+StoveGuardApp::StoveGuardApp(const Duration alarmThreshold, Notifier& notifier, FrameTimer& frameTimer)
         : stoveMonitor_{alarmThreshold},
-          frameAnalyzer_{frameAnalyzer},
           notifier_{notifier},
           frameTimer_{frameTimer} {
 }
 
-Event StoveGuardApp::processFrame(const Frame& frame) {
-    const auto detection = frameAnalyzer_.analyze(frame);
+Event StoveGuardApp::processFrame(const Detection detection) {
     const auto [stoveState, personState] = toDomain(detection);
     const auto delta = frameTimer_.tick();
 

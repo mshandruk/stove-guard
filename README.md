@@ -59,7 +59,7 @@ cmake --build build
 ### Run
 
 ```bash
-./build/apps/video_demo/stove_guard_video_demo
+./build/apps/video_demo/stove_guard_video_demo video/VID_20260117_204915.mp4
 ```
 
 ## License

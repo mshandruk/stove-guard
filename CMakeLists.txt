@@ -48,6 +48,7 @@ if (BUILD_TESTS)
     add_subdirectory(tests)
 endif ()
 
+add_subdirectory(apps/common)
 if (BUILD_DEMO)
     add_subdirectory(apps/demo)
 endif ()

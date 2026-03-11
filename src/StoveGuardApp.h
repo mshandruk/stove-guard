@@ -1,7 +1,7 @@
 #ifndef STOVEGUARD_STOVEGUARDAPP_H
 #define STOVEGUARD_STOVEGUARDAPP_H
 
-#include "FrameAnalyzer.h"
+#include "Detection.h"
 #include "FrameTimer.h"
 #include "Notifier.h"
 #include "StoveMonitor.h"
@@ -15,12 +15,11 @@ class StoveGuardApp {
 
     ~StoveGuardApp() = default;
 
-    StoveGuardApp(Duration alarmThreshold, FrameAnalyzer& frameAnalyzer, Notifier& notifier, FrameTimer& frameTimer);
-    Event processFrame(const Frame& frame);
+    StoveGuardApp(Duration alarmThreshold, Notifier& notifier, FrameTimer& frameTimer);
+    Event processFrame(Detection detection);
 
   private:
     StoveMonitor stoveMonitor_;
-    FrameAnalyzer& frameAnalyzer_;
     Notifier& notifier_;
     FrameTimer& frameTimer_;
 };
