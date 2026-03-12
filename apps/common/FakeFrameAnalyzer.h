@@ -3,12 +3,13 @@
 #include <array>
 #include <cstddef>
 
+#include "AnalysisResult.h"
 #include "Frame.h"
 #include "FrameAnalyzer.h"
 
 class FakeFrameAnalyzer final : public FrameAnalyzer {
   public:
-    Detection analyze(const Frame& frame) override;
+    AnalyzerResult analyze(const Frame& frame) override;
 
   private:
     static constexpr std::array<std::pair<Detection, std::string_view>, 8> scenario_ = {{

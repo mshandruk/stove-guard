@@ -16,8 +16,8 @@ StoveGuardRunner::StoveGuardRunner(StoveGuardApp& app, FrameSource& frameSource,
 
 void StoveGuardRunner::run() {
     while (const auto frame = frameSource_.getFrame()) {
-        const auto result = frameAnalyzer_.analyze(*frame);
-        app_.processFrame(result);
+        const auto [detection, boundingBoxes] = frameAnalyzer_.analyze(*frame);
+        app_.processFrame(detection);
         std::cout << "[Runner] frame processed" << '\n';
     }
 }

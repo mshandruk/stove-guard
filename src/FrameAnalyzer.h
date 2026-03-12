@@ -1,7 +1,7 @@
 #ifndef STOVEGUARD_FRAMEANALYZER_H
 #define STOVEGUARD_FRAMEANALYZER_H
 
-#include "Detection.h"
+#include "AnalysisResult.h"
 #include "Frame.h"
 
 class FrameAnalyzer {
@@ -16,7 +16,7 @@ class FrameAnalyzer {
 
     virtual ~FrameAnalyzer() = default;
 
-    virtual Detection analyze(const Frame& frame) = 0;
+    virtual AnalyzerResult analyze(const Frame& frame) = 0;
 };
 
 #endif // STOVEGUARD_FRAMEANALYZER_H
