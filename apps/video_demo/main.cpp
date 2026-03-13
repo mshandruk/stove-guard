@@ -7,10 +7,18 @@
 #include <stdexcept>
 #include <string_view>
 #include <thread>
+#include <vector>
 
+#include <opencv2/core/mat.hpp>
+#include <opencv2/core/types.hpp>
+#include <opencv2/highgui.hpp>
+#include <opencv2/imgproc.hpp>
+
+#include "AnalysisResult.h"
 #include "ConsoleNotifier.h"
 #include "FakeFrameAnalyzer.h"
 #include "Frame.h"
+#include "FrameDisplay.h"
 #include "FrameSource.h"
 #include "FrameTimer.h"
 #include "RealClock.h"
@@ -38,6 +46,24 @@ class VideoFileFrameSource final : public FrameSource {
 
   private:
     cv::VideoCapture videoCapture_;
+};
+
+class OpencvFrameDisplay final : public FrameDisplay {
+  public:
+    void render(const Frame& frame, const std::vector<BoundingBox>& boxes) override {
+        // Делаем копию кадра, чтобы не рисовать прямо на оригинале (если он нужен чистым)
+        const cv::Mat canvas = frame.data.clone();
+
+        for (const auto& [x, y, width, height] : boxes) {
+            // Формируем точки: левый верхний угол и правый нижний
+            const cv::Point topLeft(x, y);
+            const cv::Point bottomRight(x + width, y + height);
+            // Рисуем: (изображение, точки, цвет BGR, толщина линии)
+            cv::rectangle(canvas, topLeft, bottomRight, cv::Scalar(0, 255, 0), 1);
+        }
+        cv::imshow("StoveGuard", canvas);
+        cv::waitKey(1);
+    }
 };
 
 namespace {
@@ -68,11 +94,11 @@ int main(int argc, char* argv[]) {
 
     constexpr auto ALARM_THRESHOLD = std::chrono::seconds{2};
     StoveGuardApp app{ALARM_THRESHOLD, consoleNotifier, frameTimer};
-
+    OpencvFrameDisplay frameDisplay;
     try {
         VideoFileFrameSource frameSource(videoPath);
         FakeFrameAnalyzer frameAnalyzer;
-        StoveGuardRunner runner{app, frameSource, frameAnalyzer};
+        StoveGuardRunner runner{app, frameSource, frameAnalyzer, &frameDisplay};
         runner.run();
     } catch (const std::exception& e) {
         std::cerr << e.what() << '\n';
