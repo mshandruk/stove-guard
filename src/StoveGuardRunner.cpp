@@ -22,11 +22,11 @@ StoveGuardRunner::StoveGuardRunner(
 
 void StoveGuardRunner::run() {
     while (const auto frame = frameSource_.getFrame()) {
-        const auto& [detection, boundingBoxes] = frameAnalyzer_.analyze(*frame);
+        const auto& [detection, objectDetections] = frameAnalyzer_.analyze(*frame);
         app_.processFrame(detection);
         std::cout << "[Runner] frame processed" << '\n';
         if (frameDisplay_ != nullptr) {
-            frameDisplay_->render(*frame, boundingBoxes);
+            frameDisplay_->render(*frame, objectDetections);
         }
     }
 }

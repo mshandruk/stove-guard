@@ -1,8 +1,11 @@
 #include <chrono>
 #include <optional>
 #include <thread>
+#include <utility>
 
+#include "AnalysisResult.h"
 #include "ConsoleNotifier.h"
+#include "Detection.h"
 #include "FakeFrameAnalyzer.h"
 #include "Frame.h"
 #include "FrameSource.h"
@@ -21,12 +24,70 @@ class TimerFrameSource final : public FrameSource {
 };
 
 int main() {
-
-    FakeFrameAnalyzer frameAnalyzer;
+    FakeScenario scenario = {FakeScenario{
+        {
+            AnalyzerResult{
+                Detection{false, true},
+                ObjectDetections{},
+            },
+            "Stove is OFF and person is present",
+        },
+        {
+            AnalyzerResult{
+                Detection{true, false},
+                ObjectDetections{},
+            },
+            "Stove is ON and person is absent",
+        },
+        {
+            AnalyzerResult{
+                Detection{true, true},
+                ObjectDetections{},
+            },
+            "Stove is ON and person is appears",
+        },
+        {
+            AnalyzerResult{
+                Detection{true, false},
+                ObjectDetections{},
+            },
+            "Stove is ON and person is absent",
+        },
+        {
+            AnalyzerResult{
+                Detection{true, false},
+                ObjectDetections{},
+            },
+            "Stove is ON and person is absent",
+        },
+        {
+            AnalyzerResult{
+                Detection{true, false},
+                ObjectDetections{},
+            },
+            "Stove is ON and person is absent",
+        },
+        {
+            AnalyzerResult{
+                Detection{true, true},
+                ObjectDetections{},
+            },
+            "Stove is ON and person is appears",
+        },
+        {
+            AnalyzerResult{
+                Detection{false, false},
+                ObjectDetections{},
+            },
+            "Stove is OFF and person is absent",
+        },
+    }};
+    FakeFrameAnalyzer frameAnalyzer{std::move(scenario)};
     TimerFrameSource frameSource;
-    ConsoleNotifier consoleNotifier;
+
     RealClock clock;
     FrameTimer deltaFrame{clock};
+    ConsoleNotifier consoleNotifier;
 
     constexpr auto ALARM_THRESHOLD = std::chrono::seconds{2};
     StoveGuardApp app{ALARM_THRESHOLD, consoleNotifier, deltaFrame};

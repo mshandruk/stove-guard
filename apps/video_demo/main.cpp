@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <chrono>
 #include <cstdlib>
 #include <exception>
@@ -5,9 +6,10 @@
 #include <iostream>
 #include <optional>
 #include <stdexcept>
+#include <string>
 #include <string_view>
 #include <thread>
-#include <vector>
+#include <utility>
 
 #include <opencv2/core/mat.hpp>
 #include <opencv2/core/types.hpp>
@@ -16,6 +18,7 @@
 
 #include "AnalysisResult.h"
 #include "ConsoleNotifier.h"
+#include "Detection.h"
 #include "FakeFrameAnalyzer.h"
 #include "Frame.h"
 #include "FrameDisplay.h"
@@ -50,19 +53,41 @@ class VideoFileFrameSource final : public FrameSource {
 
 class OpencvFrameDisplay final : public FrameDisplay {
   public:
-    void render(const Frame& frame, const std::vector<BoundingBox>& boxes) override {
-        // Делаем копию кадра, чтобы не рисовать прямо на оригинале (если он нужен чистым)
+    void render(const Frame& frame, const ObjectDetections& objectDetections) override {
         const cv::Mat canvas = frame.data.clone();
-
-        for (const auto& [x, y, width, height] : boxes) {
-            // Формируем точки: левый верхний угол и правый нижний
-            const cv::Point topLeft(x, y);
-            const cv::Point bottomRight(x + width, y + height);
-            // Рисуем: (изображение, точки, цвет BGR, толщина линии)
-            cv::rectangle(canvas, topLeft, bottomRight, cv::Scalar(0, 255, 0), 1);
+        for (const auto& [label, confidence, boundingBox] : objectDetections) {
+            const cv::Rect box{
+                static_cast<int>(boundingBox.x),
+                static_cast<int>(boundingBox.y),
+                static_cast<int>(boundingBox.width),
+                static_cast<int>(boundingBox.height),
+            };
+            const auto labelColor = getLabelColor(label);
+            cv::rectangle(canvas, box, labelColor);
+            cv::putText(
+                canvas,
+                std::string(labelToString(label)) + " " + std::to_string(confidence),
+                {box.x, std::max(box.y - 5, 15)},
+                cv::FONT_HERSHEY_SIMPLEX,
+                0.5,
+                labelColor);
         }
         cv::imshow("StoveGuard", canvas);
         cv::waitKey(1);
+    }
+
+  private:
+    static cv::Scalar getLabelColor(const LabelClassification& label) noexcept {
+        switch (label) {
+        case LabelClassification::Person: {
+            return cv::Scalar{0, 255, 0};
+        }
+        case LabelClassification::Stove: {
+            return cv::Scalar{0, 0, 255};
+        }
+        default:
+            return cv::Scalar{0, 0, 0};
+        }
     }
 };
 
@@ -72,7 +97,7 @@ void printUsage(const std::string_view progname) {
 }
 } // namespace
 
-int main(int argc, char* argv[]) {
+int main(const int argc, char* argv[]) {
     if (argc != 2) {
         // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-pointer-arithmetic)
         const std::string_view progname = argv[0] != nullptr ? argv[0] : "stove_guard_video_demo";
@@ -93,11 +118,67 @@ int main(int argc, char* argv[]) {
     FrameTimer frameTimer{realClock};
 
     constexpr auto ALARM_THRESHOLD = std::chrono::seconds{2};
+
     StoveGuardApp app{ALARM_THRESHOLD, consoleNotifier, frameTimer};
     OpencvFrameDisplay frameDisplay;
+
+    FakeScenario scenario = {{
+        {
+            {
+                AnalyzerResult{
+                    Detection{false, true},
+                    ObjectDetections{
+                        ObjectDetection{
+                            LabelClassification::Person,
+                            99.0,
+                            BoundingBox{100, 100, 200, 200},
+                        },
+                    },
+                },
+            },
+            "Stove is OFF and person is present",
+        },
+        {
+            {
+                AnalyzerResult{
+                    Detection{true, true},
+                    ObjectDetections{
+                        ObjectDetection{
+                            LabelClassification::Stove,
+                            99.0,
+                            BoundingBox{100, 100, 200, 200},
+                        },
+                        ObjectDetection{
+                            LabelClassification::Person,
+                            99.0,
+                            BoundingBox{200, 200, 300, 300},
+                        },
+                    },
+                },
+            },
+            "Stove is ON and person is present",
+        },
+        {
+            {
+                AnalyzerResult{
+                    Detection{true, false},
+                    ObjectDetections{
+                        ObjectDetection{
+                            LabelClassification::Stove,
+                            99.0,
+                            BoundingBox{200, 200, 300, 300},
+                        },
+                    },
+                },
+            },
+            "Stove is ON and person is absent",
+        },
+
+    }};
+
     try {
         VideoFileFrameSource frameSource(videoPath);
-        FakeFrameAnalyzer frameAnalyzer;
+        FakeFrameAnalyzer frameAnalyzer{std::move(scenario)};
         StoveGuardRunner runner{app, frameSource, frameAnalyzer, &frameDisplay};
         runner.run();
     } catch (const std::exception& e) {

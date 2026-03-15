@@ -14,7 +14,7 @@ class FrameDisplay {
     FrameDisplay(FrameDisplay&& other) = delete;
     FrameDisplay& operator=(FrameDisplay&& other) = delete;
 
-    virtual void render(const Frame& frame, const std::vector<BoundingBox>& boxes) = 0;
+    virtual void render(const Frame& frame, const ObjectDetections& objectDetections) = 0;
 };
 
 #endif // STOVEGUARD_FRAMEDISPLAY_H
