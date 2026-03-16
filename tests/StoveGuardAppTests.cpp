@@ -4,26 +4,26 @@
 
 #include <gtest/gtest.h>
 
-#include "AnalysisResult.h"
 #include "Clock.h"
 #include "Detection.h"
 #include "Frame.h"
-#include "FrameAnalyzer.h"
 #include "FrameTimer.h"
 #include "Notifier.h"
+#include "ObjectDetection.h"
+#include "SceneInterpreter.h"
 #include "StoveGuardApp.h"
 #include "StoveMonitor.h"
 
 using namespace std::chrono;
 
-class FakeFrameAnalyzer : public FrameAnalyzer {
+class FakeSceneInterpreter : public SceneInterpreter {
   public:
-    void nextDetection(const Detection detection) noexcept {
+    void nextDetection(const Detection& detection) noexcept {
         nextDetection_ = detection;
     }
 
-    AnalyzerResult analyze([[maybe_unused]] const Frame& frame) override {
-        return AnalyzerResult{nextDetection_, {}};
+    Detection interpret([[maybe_unused]] const ObjectDetections& objectDetections) override {
+        return nextDetection_;
     }
 
   private:
@@ -71,7 +71,7 @@ class FakeClock final : public Clock {
 
 class StoveGuardAppTest : public testing::Test {
   protected:
-    FakeFrameAnalyzer analyzer;
+    FakeSceneInterpreter scene;
     FakeNotifier notifier;
     FakeClock clock;
     Duration alarmThreshold = seconds{15};
@@ -81,95 +81,95 @@ class StoveGuardAppTest : public testing::Test {
 };
 
 TEST_F(StoveGuardAppTest, DangerousEntered_WhenStoveOnAndNoPerson) {
-    analyzer.nextDetection({true, false});
-    const auto result = analyzer.analyze(frame);
-    EXPECT_EQ(app.processFrame(result.detection), Event::DangerousEntered);
+    scene.nextDetection({true, false});
+    const auto result = scene.interpret({});
+    EXPECT_EQ(app.processFrame(result), Event::DangerousEntered);
 }
 
 TEST_F(StoveGuardAppTest, ReturnsNone_WhenStoveOnAndPersonPresent) {
-    analyzer.nextDetection({true, true});
-    const auto result = analyzer.analyze(frame);
-    EXPECT_EQ(app.processFrame(result.detection), Event::None);
+    scene.nextDetection({true, true});
+    const auto result = scene.interpret({});
+    EXPECT_EQ(app.processFrame(result), Event::None);
 }
 
 TEST_F(StoveGuardAppTest, ReturnsNone_WhenStoveOffAndNoPerson) {
-    analyzer.nextDetection({false, false});
-    const auto result = analyzer.analyze(frame);
-    EXPECT_EQ(app.processFrame(result.detection), Event::None);
+    scene.nextDetection({false, false});
+    const auto result = scene.interpret({});
+    EXPECT_EQ(app.processFrame(result), Event::None);
 }
 
 TEST_F(StoveGuardAppTest, AlarmStarted_WhenNoPersonForAlarmThreshold) {
-    analyzer.nextDetection({true, false});
-    const auto result = analyzer.analyze(frame);
-    ASSERT_EQ(app.processFrame(result.detection), Event::DangerousEntered);
+    scene.nextDetection({true, false});
+    const auto result = scene.interpret({});
+    ASSERT_EQ(app.processFrame(result), Event::DangerousEntered);
 
     clock.advance(alarmThreshold);
-    EXPECT_EQ(app.processFrame(result.detection), Event::AlarmStarted);
+    EXPECT_EQ(app.processFrame(result), Event::AlarmStarted);
 }
 
 TEST_F(StoveGuardAppTest, AlarmCanceled_WhenPersonAppearsAfterAlarm) {
-    analyzer.nextDetection({true, false});
-    auto result = analyzer.analyze(frame);
-    ASSERT_EQ(app.processFrame(result.detection), Event::DangerousEntered);
+    scene.nextDetection({true, false});
+    auto result = scene.interpret({});
+    ASSERT_EQ(app.processFrame(result), Event::DangerousEntered);
 
     clock.advance(alarmThreshold);
-    ASSERT_EQ(app.processFrame(result.detection), Event::AlarmStarted);
+    ASSERT_EQ(app.processFrame(result), Event::AlarmStarted);
 
     clock.advance(alarmThreshold + seconds{1});
-    analyzer.nextDetection({true, true});
-    result = analyzer.analyze(frame);
-    EXPECT_EQ(app.processFrame(result.detection), Event::AlarmCleared);
+    scene.nextDetection({true, true});
+    result = scene.interpret({});
+    EXPECT_EQ(app.processFrame(result), Event::AlarmCleared);
 }
 
 TEST_F(StoveGuardAppTest, AlarmNotStarted_WhenPersonAppearsBeforeAlarm) {
 
-    analyzer.nextDetection({true, false});
-    auto result = analyzer.analyze(frame);
-    ASSERT_EQ(app.processFrame(result.detection), Event::DangerousEntered);
+    scene.nextDetection({true, false});
+    auto result = scene.interpret({});
+    ASSERT_EQ(app.processFrame(result), Event::DangerousEntered);
 
     clock.advance(alarmThreshold - seconds{1});
-    ASSERT_EQ(app.processFrame(result.detection), Event::None);
+    ASSERT_EQ(app.processFrame(result), Event::None);
 
     clock.advance(alarmThreshold);
-    analyzer.nextDetection({true, true});
-    result = analyzer.analyze(frame);
-    EXPECT_EQ(app.processFrame(result.detection), Event::DangerousCleared);
+    scene.nextDetection({true, true});
+    result = scene.interpret({});
+    EXPECT_EQ(app.processFrame(result), Event::DangerousCleared);
 }
 
 TEST_F(StoveGuardAppTest, AlarmRestarted_WhenPersonLeavesAfterClearingAlarm) {
-    analyzer.nextDetection({true, false});
-    auto result = analyzer.analyze(frame);
-    ASSERT_EQ(app.processFrame(result.detection), Event::DangerousEntered);
+    scene.nextDetection({true, false});
+    auto result = scene.interpret({});
+    ASSERT_EQ(app.processFrame(result), Event::DangerousEntered);
 
     clock.advance(alarmThreshold);
-    ASSERT_EQ(app.processFrame(result.detection), Event::AlarmStarted);
+    ASSERT_EQ(app.processFrame(result), Event::AlarmStarted);
 
-    analyzer.nextDetection({true, true});
-    result = analyzer.analyze(frame);
-    ASSERT_EQ(app.processFrame(result.detection), Event::AlarmCleared);
+    scene.nextDetection({true, true});
+    result = scene.interpret({});
+    ASSERT_EQ(app.processFrame(result), Event::AlarmCleared);
 
     clock.advance(seconds{2});
-    analyzer.nextDetection({true, false});
-    result = analyzer.analyze(frame);
-    ASSERT_EQ(app.processFrame(result.detection), Event::DangerousEntered);
+    scene.nextDetection({true, false});
+    result = scene.interpret({});
+    ASSERT_EQ(app.processFrame(result), Event::DangerousEntered);
 
     clock.advance(alarmThreshold);
-    EXPECT_EQ(app.processFrame(result.detection), Event::AlarmStarted);
+    EXPECT_EQ(app.processFrame(result), Event::AlarmStarted);
 }
 
 TEST_F(StoveGuardAppTest, Notify_WhenEventIsNotNone) {
-    analyzer.nextDetection({true, false});
-    const auto result = analyzer.analyze(frame);
+    scene.nextDetection({true, false});
+    const auto result = scene.interpret({});
 
-    ASSERT_EQ(app.processFrame(result.detection), Event::DangerousEntered);
+    ASSERT_EQ(app.processFrame(result), Event::DangerousEntered);
     ASSERT_EQ(notifier.events().at(0), Event::DangerousEntered);
 
     clock.advance(alarmThreshold);
-    ASSERT_EQ(app.processFrame(result.detection), Event::AlarmStarted);
+    ASSERT_EQ(app.processFrame(result), Event::AlarmStarted);
     EXPECT_EQ(notifier.events().at(1), Event::AlarmStarted);
 
     ASSERT_EQ(notifier.callCount(), 2);
     clock.advance(seconds{1});
-    ASSERT_EQ(app.processFrame(result.detection), Event::None);
+    ASSERT_EQ(app.processFrame(result), Event::None);
     EXPECT_EQ(notifier.callCount(), 2);
 }

@@ -1,7 +1,7 @@
 #ifndef STOVEGUARD_FRAMEDISPLAY_H
 #define STOVEGUARD_FRAMEDISPLAY_H
-#include "AnalysisResult.h"
 #include "Frame.h"
+#include "ObjectDetection.h"
 
 class FrameDisplay {
   public:

@@ -3,14 +3,14 @@
 #include <thread>
 #include <utility>
 
-#include "AnalysisResult.h"
 #include "ConsoleNotifier.h"
-#include "Detection.h"
 #include "FakeFrameAnalyzer.h"
 #include "Frame.h"
 #include "FrameSource.h"
 #include "FrameTimer.h"
+#include "ObjectDetection.h"
 #include "RealClock.h"
+#include "SimpleSceneInterpreter.h"
 #include "StoveGuardApp.h"
 #include "StoveGuardRunner.h"
 
@@ -26,72 +26,105 @@ class TimerFrameSource final : public FrameSource {
 int main() {
     FakeScenario scenario = {FakeScenario{
         {
-            AnalyzerResult{
-                Detection{false, true},
-                ObjectDetections{},
+            ObjectDetections{
+                ObjectDetection{
+                    LabelClassification::Person,
+                    99.0,
+                    BoundingBox{200, 200, 300, 300},
+                },
+
             },
             "Stove is OFF and person is present",
         },
         {
-            AnalyzerResult{
-                Detection{true, false},
-                ObjectDetections{},
+            ObjectDetections{
+                ObjectDetection{
+                    LabelClassification::Stove,
+                    99.0,
+                    BoundingBox{100, 100, 200, 200},
+                },
             },
             "Stove is ON and person is absent",
         },
         {
-            AnalyzerResult{
-                Detection{true, true},
-                ObjectDetections{},
+            ObjectDetections{
+                ObjectDetection{
+                    LabelClassification::Stove,
+                    99.0,
+                    BoundingBox{100, 100, 200, 200},
+                },
+                ObjectDetection{
+                    LabelClassification::Person,
+                    99.0,
+                    BoundingBox{200, 200, 300, 300},
+                },
+
             },
             "Stove is ON and person is appears",
         },
         {
-            AnalyzerResult{
-                Detection{true, false},
-                ObjectDetections{},
+            ObjectDetections{
+                ObjectDetection{
+                    LabelClassification::Stove,
+                    99.0,
+                    BoundingBox{100, 100, 200, 200},
+                },
             },
             "Stove is ON and person is absent",
         },
         {
-            AnalyzerResult{
-                Detection{true, false},
-                ObjectDetections{},
+            ObjectDetections{
+                ObjectDetection{
+                    LabelClassification::Stove,
+                    99.0,
+                    BoundingBox{100, 100, 200, 200},
+                },
             },
             "Stove is ON and person is absent",
         },
         {
-            AnalyzerResult{
-                Detection{true, false},
-                ObjectDetections{},
+            ObjectDetections{
+                ObjectDetection{
+                    LabelClassification::Stove,
+                    99.0,
+                    BoundingBox{100, 100, 200, 200},
+                },
             },
             "Stove is ON and person is absent",
         },
         {
-            AnalyzerResult{
-                Detection{true, true},
-                ObjectDetections{},
+            ObjectDetections{
+                ObjectDetection{
+                    LabelClassification::Stove,
+                    99.0,
+                    BoundingBox{100, 100, 200, 200},
+                },
+                ObjectDetection{
+                    LabelClassification::Person,
+                    99.0,
+                    BoundingBox{200, 200, 300, 300},
+                },
+
             },
             "Stove is ON and person is appears",
         },
         {
-            AnalyzerResult{
-                Detection{false, false},
-                ObjectDetections{},
-            },
+            ObjectDetections{},
             "Stove is OFF and person is absent",
         },
     }};
-    FakeFrameAnalyzer frameAnalyzer{std::move(scenario)};
+    constexpr auto ALARM_THRESHOLD = std::chrono::seconds{2};
+
+    FakeSceneInterpreter frameAnalyzer{std::move(scenario)};
     TimerFrameSource frameSource;
 
     RealClock clock;
     FrameTimer deltaFrame{clock};
     ConsoleNotifier consoleNotifier;
-
-    constexpr auto ALARM_THRESHOLD = std::chrono::seconds{2};
     StoveGuardApp app{ALARM_THRESHOLD, consoleNotifier, deltaFrame};
-    StoveGuardRunner runner(app, frameSource, frameAnalyzer);
+
+    SimpleSceneInterpreter scene;
+    StoveGuardRunner runner(app, frameSource, frameAnalyzer, scene);
     runner.run();
 
     return 0;

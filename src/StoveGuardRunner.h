@@ -4,6 +4,7 @@
 #include "FrameAnalyzer.h"
 #include "FrameDisplay.h"
 #include "FrameSource.h"
+#include "SceneInterpreter.h"
 #include "StoveGuardApp.h"
 
 class StoveGuardRunner {
@@ -12,6 +13,7 @@ class StoveGuardRunner {
         StoveGuardApp& app,
         FrameSource& frameSource,
         FrameAnalyzer& frameAnalyzer,
+        SceneInterpreter& scene,
         FrameDisplay* frameDisplay = nullptr);
     ~StoveGuardRunner() = default;
 
@@ -27,6 +29,7 @@ class StoveGuardRunner {
     StoveGuardApp& app_;
     FrameSource& frameSource_;
     FrameAnalyzer& frameAnalyzer_;
+    SceneInterpreter& scene_;
     FrameDisplay* frameDisplay_ = nullptr;
 };
 

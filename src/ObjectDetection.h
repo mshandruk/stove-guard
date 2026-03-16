@@ -1,10 +1,8 @@
-#ifndef STOVEGUARD_ANALYSISRESULT_H
-#define STOVEGUARD_ANALYSISRESULT_H
+#ifndef STOVEGUARD_OBJECTDETECTION_H
+#define STOVEGUARD_OBJECTDETECTION_H
 #include <cstdint>
 #include <string_view>
 #include <vector>
-
-#include "Detection.h"
 
 struct BoundingBox {
     float x;
@@ -40,9 +38,4 @@ struct ObjectDetection {
 
 using ObjectDetections = std::vector<ObjectDetection>;
 
-struct AnalyzerResult {
-    Detection detection;
-    ObjectDetections objectDetections;
-};
-
-#endif // STOVEGUARD_ANALYSISRESULT_H
+#endif // STOVEGUARD_OBJECTDETECTION_H

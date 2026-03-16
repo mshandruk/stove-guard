@@ -16,15 +16,15 @@
 #include <opencv2/highgui.hpp>
 #include <opencv2/imgproc.hpp>
 
-#include "AnalysisResult.h"
 #include "ConsoleNotifier.h"
-#include "Detection.h"
 #include "FakeFrameAnalyzer.h"
 #include "Frame.h"
 #include "FrameDisplay.h"
 #include "FrameSource.h"
 #include "FrameTimer.h"
+#include "ObjectDetection.h"
 #include "RealClock.h"
+#include "SimpleSceneInterpreter.h"
 #include "StoveGuardApp.h"
 #include "StoveGuardRunner.h"
 
@@ -113,6 +113,54 @@ int main(const int argc, char* argv[]) {
         return EXIT_FAILURE;
     }
 
+    FakeScenario scenario = {
+
+        {
+
+            ObjectDetections{
+                ObjectDetection{
+                    LabelClassification::Person,
+                    99.0,
+                    BoundingBox{100, 100, 200, 200},
+                },
+
+            },
+            "Stove is OFF and person is present",
+        },
+
+        {
+
+            ObjectDetections{
+                ObjectDetection{
+                    LabelClassification::Stove,
+                    99.0,
+                    BoundingBox{100, 100, 200, 200},
+                },
+                ObjectDetection{
+                    LabelClassification::Person,
+                    99.0,
+                    BoundingBox{200, 200, 300, 300},
+                },
+
+            },
+            "Stove is ON and person is present",
+        },
+
+        {
+
+            ObjectDetections{
+                ObjectDetection{
+                    LabelClassification::Stove,
+                    99.0,
+                    BoundingBox{200, 200, 300, 300},
+                },
+
+            },
+            "Stove is ON and person is absent",
+        },
+
+    };
+
     ConsoleNotifier consoleNotifier;
     RealClock realClock;
     FrameTimer frameTimer{realClock};
@@ -121,65 +169,11 @@ int main(const int argc, char* argv[]) {
 
     StoveGuardApp app{ALARM_THRESHOLD, consoleNotifier, frameTimer};
     OpencvFrameDisplay frameDisplay;
-
-    FakeScenario scenario = {{
-        {
-            {
-                AnalyzerResult{
-                    Detection{false, true},
-                    ObjectDetections{
-                        ObjectDetection{
-                            LabelClassification::Person,
-                            99.0,
-                            BoundingBox{100, 100, 200, 200},
-                        },
-                    },
-                },
-            },
-            "Stove is OFF and person is present",
-        },
-        {
-            {
-                AnalyzerResult{
-                    Detection{true, true},
-                    ObjectDetections{
-                        ObjectDetection{
-                            LabelClassification::Stove,
-                            99.0,
-                            BoundingBox{100, 100, 200, 200},
-                        },
-                        ObjectDetection{
-                            LabelClassification::Person,
-                            99.0,
-                            BoundingBox{200, 200, 300, 300},
-                        },
-                    },
-                },
-            },
-            "Stove is ON and person is present",
-        },
-        {
-            {
-                AnalyzerResult{
-                    Detection{true, false},
-                    ObjectDetections{
-                        ObjectDetection{
-                            LabelClassification::Stove,
-                            99.0,
-                            BoundingBox{200, 200, 300, 300},
-                        },
-                    },
-                },
-            },
-            "Stove is ON and person is absent",
-        },
-
-    }};
-
     try {
+        SimpleSceneInterpreter scene;
         VideoFileFrameSource frameSource(videoPath);
-        FakeFrameAnalyzer frameAnalyzer{std::move(scenario)};
-        StoveGuardRunner runner{app, frameSource, frameAnalyzer, &frameDisplay};
+        FakeSceneInterpreter frameAnalyzer{std::move(scenario)};
+        StoveGuardRunner runner{app, frameSource, frameAnalyzer, scene, &frameDisplay};
         runner.run();
     } catch (const std::exception& e) {
         std::cerr << e.what() << '\n';

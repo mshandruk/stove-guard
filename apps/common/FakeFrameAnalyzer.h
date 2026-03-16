@@ -7,13 +7,14 @@
 
 #include "Frame.h"
 #include "FrameAnalyzer.h"
+#include "ObjectDetection.h"
 
-using FakeScenario = std::vector<std::pair<AnalyzerResult, std::string_view>>;
+using FakeScenario = std::vector<std::pair<ObjectDetections, std::string_view>>;
 
-class FakeFrameAnalyzer final : public FrameAnalyzer {
+class FakeSceneInterpreter final : public FrameAnalyzer {
   public:
-    explicit FakeFrameAnalyzer(FakeScenario scenario);
-    AnalyzerResult analyze(const Frame& frame) override;
+    explicit FakeSceneInterpreter(FakeScenario scenario);
+    ObjectDetections analyze(const Frame& frame) override;
 
   private:
     FakeScenario scenario_;
