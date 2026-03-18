@@ -24,12 +24,12 @@ endif ()
 # ===== Domain layer (static lib) =====
 add_library(stove_guard_lib STATIC
         src/StoveMonitor.cpp
-        src/DetectionMapper.cpp
-        src/StoveGuardApp.cpp
+        src/SafetyService.cpp
+        src/SceneMapper.cpp
         src/ConsoleNotifier.cpp
         src/FrameTimer.cpp
         src/RealClock.cpp
-        src/StoveGuardRunner.cpp
+        src/VideoPipeline.cpp
 )
 target_include_directories(stove_guard_lib
         PUBLIC

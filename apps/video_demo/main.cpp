@@ -24,9 +24,8 @@
 #include "FrameTimer.h"
 #include "ObjectDetection.h"
 #include "RealClock.h"
-#include "SimpleSceneInterpreter.h"
-#include "StoveGuardApp.h"
-#include "StoveGuardRunner.h"
+#include "SafetyService.h"
+#include "VideoPipeline.h"
 
 class VideoFileFrameSource final : public FrameSource {
   public:
@@ -167,13 +166,12 @@ int main(const int argc, char* argv[]) {
 
     constexpr auto ALARM_THRESHOLD = std::chrono::seconds{2};
 
-    StoveGuardApp app{ALARM_THRESHOLD, consoleNotifier, frameTimer};
+    SafetyService app{ALARM_THRESHOLD, consoleNotifier, frameTimer};
     OpencvFrameDisplay frameDisplay;
     try {
-        SimpleSceneInterpreter scene;
         VideoFileFrameSource frameSource(videoPath);
         FakeSceneInterpreter frameAnalyzer{std::move(scenario)};
-        StoveGuardRunner runner{app, frameSource, frameAnalyzer, scene, &frameDisplay};
+        VideoPipeline runner{app, frameSource, frameAnalyzer, &frameDisplay};
         runner.run();
     } catch (const std::exception& e) {
         std::cerr << e.what() << '\n';

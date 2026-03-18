@@ -10,9 +10,8 @@
 #include "FrameTimer.h"
 #include "ObjectDetection.h"
 #include "RealClock.h"
-#include "SimpleSceneInterpreter.h"
-#include "StoveGuardApp.h"
-#include "StoveGuardRunner.h"
+#include "SafetyService.h"
+#include "VideoPipeline.h"
 
 class TimerFrameSource final : public FrameSource {
   public:
@@ -121,10 +120,9 @@ int main() {
     RealClock clock;
     FrameTimer deltaFrame{clock};
     ConsoleNotifier consoleNotifier;
-    StoveGuardApp app{ALARM_THRESHOLD, consoleNotifier, deltaFrame};
+    SafetyService app{ALARM_THRESHOLD, consoleNotifier, deltaFrame};
 
-    SimpleSceneInterpreter scene;
-    StoveGuardRunner runner(app, frameSource, frameAnalyzer, scene);
+    VideoPipeline runner(app, frameSource, frameAnalyzer);
     runner.run();
 
     return 0;

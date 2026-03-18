@@ -1,34 +1,32 @@
-#include "StoveGuardRunner.h"
+#include "VideoPipeline.h"
 
 #include <iostream>
 
 #include "FrameAnalyzer.h"
 #include "FrameDisplay.h"
 #include "FrameSource.h"
-#include "SceneInterpreter.h"
-#include "StoveGuardApp.h"
+#include "SafetyService.h"
+#include "SceneMapper.h"
 
-StoveGuardRunner::StoveGuardRunner(
-    StoveGuardApp& app,
+VideoPipeline::VideoPipeline(
+    SafetyService& safetyService,
     FrameSource& frameSource,
     FrameAnalyzer& frameAnalyzer,
-    SceneInterpreter& scene,
     FrameDisplay* frameDisplay)
-        : app_{app},
+        : safetyService_{safetyService},
           frameSource_{frameSource},
           frameAnalyzer_{frameAnalyzer},
-          scene_{scene},
           frameDisplay_{frameDisplay}
 
 {
 }
 
-void StoveGuardRunner::run() {
+void VideoPipeline::run() {
     while (const auto frame = frameSource_.getFrame()) {
         const auto& objectDetections = frameAnalyzer_.analyze(*frame);
-        const auto detected = scene_.interpret(objectDetections);
-        app_.processFrame(detected);
-        std::cout << "[Runner] frame processed" << '\n';
+        const auto scene = SceneMapper::map(objectDetections);
+        safetyService_.handle(scene);
+        std::cout << "[Pipeline] frame processed" << '\n';
         if (frameDisplay_ != nullptr) {
             frameDisplay_->render(*frame, objectDetections);
         }

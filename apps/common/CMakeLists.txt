@@ -7,7 +7,6 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 add_library(apps_common STATIC
         FakeFrameAnalyzer.cpp
-        SimpleSceneInterpreter.cpp
 )
 target_include_directories(apps_common
         PUBLIC
