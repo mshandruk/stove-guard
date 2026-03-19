@@ -28,7 +28,7 @@ int main() {
             ObjectDetections{
                 ObjectDetection{
                     LabelClassification::Person,
-                    99.0,
+                    Confidence{0.9F},
                     BoundingBox{200, 200, 300, 300},
                 },
 
@@ -39,7 +39,7 @@ int main() {
             ObjectDetections{
                 ObjectDetection{
                     LabelClassification::Stove,
-                    99.0,
+                    Confidence{0.9F},
                     BoundingBox{100, 100, 200, 200},
                 },
             },
@@ -49,12 +49,12 @@ int main() {
             ObjectDetections{
                 ObjectDetection{
                     LabelClassification::Stove,
-                    99.0,
+                    Confidence{0.9F},
                     BoundingBox{100, 100, 200, 200},
                 },
                 ObjectDetection{
                     LabelClassification::Person,
-                    99.0,
+                    Confidence{0.9F},
                     BoundingBox{200, 200, 300, 300},
                 },
 
@@ -65,7 +65,7 @@ int main() {
             ObjectDetections{
                 ObjectDetection{
                     LabelClassification::Stove,
-                    99.0,
+                    Confidence{0.9F},
                     BoundingBox{100, 100, 200, 200},
                 },
             },
@@ -75,7 +75,7 @@ int main() {
             ObjectDetections{
                 ObjectDetection{
                     LabelClassification::Stove,
-                    99.0,
+                    Confidence{0.9F},
                     BoundingBox{100, 100, 200, 200},
                 },
             },
@@ -85,7 +85,7 @@ int main() {
             ObjectDetections{
                 ObjectDetection{
                     LabelClassification::Stove,
-                    99.0,
+                    Confidence{0.9F},
                     BoundingBox{100, 100, 200, 200},
                 },
             },
@@ -95,12 +95,12 @@ int main() {
             ObjectDetections{
                 ObjectDetection{
                     LabelClassification::Stove,
-                    99.0,
+                    Confidence{0.9F},
                     BoundingBox{100, 100, 200, 200},
                 },
                 ObjectDetection{
                     LabelClassification::Person,
-                    99.0,
+                    Confidence{0.9F},
                     BoundingBox{200, 200, 300, 300},
                 },
 

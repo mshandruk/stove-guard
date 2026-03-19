@@ -5,24 +5,24 @@
 
 namespace SceneMapper {
 SceneState map(const ObjectDetections& objectDetections) {
-    bool hasFlame = false;
-    bool hasPerson = false;
+    SceneState scene{StoveState::Off, PersonState::Absent};
 
     for (const auto& objectDetection : objectDetections) {
-        switch (objectDetection.label) {
+        switch (objectDetection.classification) {
         case LabelClassification::Stove: {
-            hasFlame = true;
+            scene.stoveState = StoveState::On;
             break;
         }
         case LabelClassification::Person: {
-            hasPerson = true;
+            scene.personState = PersonState::Present;
+            break;
+        }
+        case LabelClassification::Unknown: {
             break;
         }
         }
     }
-    SceneState scene{};
-    scene.stoveState = hasFlame ? StoveState::On : StoveState::Off;
-    scene.personState = hasPerson ? PersonState::Present : PersonState::Absent;
+
     return scene;
 }
 

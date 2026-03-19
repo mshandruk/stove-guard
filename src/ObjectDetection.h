@@ -1,6 +1,7 @@
-#ifndef STOVEGUARD_OBJECTDETECTION_H
-#define STOVEGUARD_OBJECTDETECTION_H
+#pragma once
+
 #include <cstdint>
+#include <stdexcept>
 #include <string_view>
 #include <vector>
 
@@ -12,6 +13,7 @@ struct BoundingBox {
 };
 
 enum class LabelClassification : uint8_t {
+    Unknown,
     Person,
     Stove,
 };
@@ -30,12 +32,27 @@ inline std::string_view labelToString(const LabelClassification& label) {
     }
 }
 
+class Confidence {
+  public:
+    explicit Confidence(const float value)
+            : value_(value) {
+        if (value < 0.0F || value > 1.0F) {
+            throw std::invalid_argument("Confidence value must be in between [0, 1]");
+        }
+    }
+
+    [[nodiscard]] float value() const noexcept {
+        return value_;
+    }
+
+  private:
+    float value_;
+};
+
 struct ObjectDetection {
-    LabelClassification label;
-    float confidence;
-    BoundingBox boundingBox;
+    LabelClassification classification = LabelClassification::Unknown;
+    Confidence confidence = Confidence{0.0F};
+    BoundingBox box{};
 };
 
 using ObjectDetections = std::vector<ObjectDetection>;
-
-#endif // STOVEGUARD_OBJECTDETECTION_H

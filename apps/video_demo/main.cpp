@@ -65,7 +65,7 @@ class OpencvFrameDisplay final : public FrameDisplay {
             cv::rectangle(canvas, box, labelColor);
             cv::putText(
                 canvas,
-                std::string(labelToString(label)) + " " + std::to_string(confidence),
+                std::string(labelToString(label)) + " " + std::to_string(confidence.value()),
                 {box.x, std::max(box.y - 5, 15)},
                 cv::FONT_HERSHEY_SIMPLEX,
                 0.5,
@@ -119,7 +119,7 @@ int main(const int argc, char* argv[]) {
             ObjectDetections{
                 ObjectDetection{
                     LabelClassification::Person,
-                    99.0,
+                    Confidence{0.9F},
                     BoundingBox{100, 100, 200, 200},
                 },
 
@@ -132,12 +132,12 @@ int main(const int argc, char* argv[]) {
             ObjectDetections{
                 ObjectDetection{
                     LabelClassification::Stove,
-                    99.0,
+                    Confidence{0.9F},
                     BoundingBox{100, 100, 200, 200},
                 },
                 ObjectDetection{
                     LabelClassification::Person,
-                    99.0,
+                    Confidence{0.9F},
                     BoundingBox{200, 200, 300, 300},
                 },
 
@@ -150,7 +150,7 @@ int main(const int argc, char* argv[]) {
             ObjectDetections{
                 ObjectDetection{
                     LabelClassification::Stove,
-                    99.0,
+                    Confidence{0.9F},
                     BoundingBox{200, 200, 300, 300},
                 },
 
