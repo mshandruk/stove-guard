@@ -4,8 +4,6 @@
 #include "StoveMonitor.h"
 
 namespace SceneMapper {
-const float PERSON_THRESHOLD = 0.7F;
-const float STOVE_THRESHOLD = 0.7F;
 
 SceneState map(const ObjectDetections& objectDetections) {
     SceneState scene{StoveState::Off, PersonState::Absent};
@@ -13,22 +11,14 @@ SceneState map(const ObjectDetections& objectDetections) {
     for (const auto& objectDetection : objectDetections) {
 
         switch (objectDetection.classification) {
-        case LabelClassification::Stove: {
-            if (objectDetection.confidence.value() >= STOVE_THRESHOLD) {
-                scene.stoveState = StoveState::On;
-            }
-
+        case LabelClassification::Stove:
+            scene.stoveState = StoveState::On;
             break;
-        }
-        case LabelClassification::Person: {
-            if (objectDetection.confidence.value() >= PERSON_THRESHOLD) {
-                scene.personState = PersonState::Present;
-            }
+        case LabelClassification::Person:
+            scene.personState = PersonState::Present;
             break;
-        }
-        case LabelClassification::Unknown: {
+        case LabelClassification::Unknown:
             break;
-        }
         }
     }
 

@@ -4,6 +4,7 @@ add_executable(${TEST_TARGET}
         StoveMonitorTests.cpp
         SceneMapperTests.cpp
         SafetyServiceTests.cpp
+        DetectionFilterTests.cpp
 )
 
 target_link_libraries(${TEST_TARGET}

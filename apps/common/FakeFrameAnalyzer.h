@@ -1,5 +1,5 @@
-#ifndef STOVEGUARD_FAKEFRAMEANALYZER_H
-#define STOVEGUARD_FAKEFRAMEANALYZER_H
+#pragma once
+
 #include <cstddef>
 #include <string_view>
 #include <utility>
@@ -11,13 +11,12 @@
 
 using FakeScenario = std::vector<std::pair<ObjectDetections, std::string_view>>;
 
-class FakeSceneInterpreter final : public FrameAnalyzer {
+class FakeFrameAnalyzer final : public FrameAnalyzer {
   public:
-    explicit FakeSceneInterpreter(FakeScenario scenario);
+    explicit FakeFrameAnalyzer(FakeScenario scenario);
     ObjectDetections analyze(const Frame& frame) override;
 
   private:
     FakeScenario scenario_;
     std::size_t step_ = 0;
 };
-#endif // STOVEGUARD_FAKEFRAMEANALYZER_H

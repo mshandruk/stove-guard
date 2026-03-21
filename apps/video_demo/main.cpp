@@ -17,6 +17,7 @@
 #include <opencv2/imgproc.hpp>
 
 #include "ConsoleNotifier.h"
+#include "DetectionFilter.h"
 #include "FakeFrameAnalyzer.h"
 #include "Frame.h"
 #include "FrameDisplay.h"
@@ -91,28 +92,9 @@ class OpencvFrameDisplay final : public FrameDisplay {
 };
 
 namespace {
-void printUsage(const std::string_view progname) {
-    std::cout << "Usage: " << progname << " <path-to-video-file>\n";
-}
-} // namespace
+FakeScenario getFakeScenario() {
 
-int main(const int argc, char* argv[]) {
-    if (argc != 2) {
-        // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-pointer-arithmetic)
-        const std::string_view progname = argv[0] != nullptr ? argv[0] : "stove_guard_video_demo";
-        printUsage(progname);
-        return EXIT_FAILURE;
-    }
-
-    // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-pointer-arithmetic)
-    const std::string_view videoPath = argv[1];
-
-    if (!std::filesystem::is_regular_file(videoPath)) {
-        std::cerr << "Error: File-> " << videoPath << " not found." << '\n';
-        return EXIT_FAILURE;
-    }
-
-    FakeScenario scenario = {
+    return {
 
         {
 
@@ -159,20 +141,48 @@ int main(const int argc, char* argv[]) {
         },
 
     };
+}
+
+void printUsage(const std::string_view progname) {
+    std::cout << "Usage: " << progname << " <path-to-video-file>\n";
+}
+} // namespace
+
+int main(const int argc, char* argv[]) {
+    if (argc != 2) {
+        // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-pointer-arithmetic)
+        const std::string_view progname = argv[0] != nullptr ? argv[0] : "stove_guard_video_demo";
+        printUsage(progname);
+        return EXIT_FAILURE;
+    }
+
+    // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-pointer-arithmetic)
+    const std::string_view videoPath = argv[1];
+
+    if (!std::filesystem::is_regular_file(videoPath)) {
+        std::cerr << "Error: File-> " << videoPath << " not found." << '\n';
+        return EXIT_FAILURE;
+    }
+
+    constexpr auto ALARM_THRESHOLD = std::chrono::seconds{2};
+    ConfidenceThresholds confidenceThresholds{
+        {LabelClassification::Person, Confidence{0.7F}},
+        {LabelClassification::Stove, Confidence{0.7F}},
+    };
+    const DetectionFilter detectionFilter{std::move(confidenceThresholds)};
 
     ConsoleNotifier consoleNotifier;
     RealClock realClock;
     FrameTimer frameTimer{realClock};
 
-    constexpr auto ALARM_THRESHOLD = std::chrono::seconds{2};
-
-    SafetyService app{ALARM_THRESHOLD, consoleNotifier, frameTimer};
+    SafetyService safetyService{ALARM_THRESHOLD, consoleNotifier, frameTimer};
     OpencvFrameDisplay frameDisplay;
+
     try {
         VideoFileFrameSource frameSource(videoPath);
-        FakeSceneInterpreter frameAnalyzer{std::move(scenario)};
-        VideoPipeline runner{app, frameSource, frameAnalyzer, &frameDisplay};
-        runner.run();
+        FakeFrameAnalyzer frameAnalyzer{getFakeScenario()};
+        VideoPipeline videoPipeline{safetyService, frameSource, frameAnalyzer, detectionFilter, &frameDisplay};
+        videoPipeline.run();
     } catch (const std::exception& e) {
         std::cerr << e.what() << '\n';
         return EXIT_FAILURE;

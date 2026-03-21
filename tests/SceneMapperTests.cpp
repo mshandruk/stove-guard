@@ -7,7 +7,7 @@
 
 TEST(DetectionMapperTest, MapsToOnAndAbsent_WhenOnlyStoveDetected) {
     const ObjectDetections objectDetections = {
-        ObjectDetection{LabelClassification::Stove, Confidence{SceneMapper::STOVE_THRESHOLD}, {}},
+        ObjectDetection{LabelClassification::Stove, Confidence{0.9F}, {}},
     };
     constexpr SceneState expected{StoveState::On, PersonState::Absent};
 
@@ -18,8 +18,8 @@ TEST(DetectionMapperTest, MapsToOnAndAbsent_WhenOnlyStoveDetected) {
 
 TEST(DetectionMapperTest, MapsToOnAndPresent_WhenStoveAndPersonDetected) {
     const ObjectDetections objectDetections = {
-        ObjectDetection{LabelClassification::Stove, Confidence{SceneMapper::STOVE_THRESHOLD}, {}},
-        ObjectDetection{LabelClassification::Person, Confidence{SceneMapper::PERSON_THRESHOLD}, {}},
+        ObjectDetection{LabelClassification::Stove, Confidence{0.9F}, {}},
+        ObjectDetection{LabelClassification::Person, Confidence{0.9F}, {}},
     };
 
     const auto result = SceneMapper::map(objectDetections);
@@ -30,8 +30,7 @@ TEST(DetectionMapperTest, MapsToOnAndPresent_WhenStoveAndPersonDetected) {
 
 TEST(DetectionMapperTest, MapsToOffAndPresent_WhenOnlyPersonDetected) {
     const ObjectDetections objectDetections = {
-        ObjectDetection{LabelClassification::Stove, Confidence{SceneMapper::STOVE_THRESHOLD - 0.1F}, {}},
-        ObjectDetection{LabelClassification::Person, Confidence{SceneMapper::PERSON_THRESHOLD}, {}},
+        ObjectDetection{LabelClassification::Person, Confidence{0.9F}, {}},
     };
 
     const auto result = SceneMapper::map(objectDetections);

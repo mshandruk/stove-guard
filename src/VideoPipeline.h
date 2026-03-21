@@ -1,5 +1,6 @@
 #pragma once
 
+#include "DetectionFilter.h"
 #include "FrameAnalyzer.h"
 #include "FrameDisplay.h"
 #include "FrameSource.h"
@@ -11,6 +12,7 @@ class VideoPipeline {
         SafetyService& safetyService,
         FrameSource& frameSource,
         FrameAnalyzer& frameAnalyzer,
+        const DetectionFilter& detectionFilter,
         FrameDisplay* frameDisplay = nullptr);
     ~VideoPipeline() = default;
 
@@ -26,5 +28,6 @@ class VideoPipeline {
     SafetyService& safetyService_;
     FrameSource& frameSource_;
     FrameAnalyzer& frameAnalyzer_;
+    const DetectionFilter& detectionFilter_;
     FrameDisplay* frameDisplay_ = nullptr;
 };

@@ -30,6 +30,7 @@ add_library(stove_guard_lib STATIC
         src/FrameTimer.cpp
         src/RealClock.cpp
         src/VideoPipeline.cpp
+        src/DetectionFilter.cpp
 )
 target_include_directories(stove_guard_lib
         PUBLIC

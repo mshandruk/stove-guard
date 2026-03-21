@@ -7,14 +7,14 @@
 #include "Frame.h"
 #include "ObjectDetection.h"
 
-FakeSceneInterpreter::FakeSceneInterpreter(FakeScenario scenario)
+FakeFrameAnalyzer::FakeFrameAnalyzer(FakeScenario scenario)
         : scenario_{std::move(scenario)} {
     if (scenario_.empty()) {
         throw std::runtime_error("Fake scenario must not be empty");
     }
 }
 
-ObjectDetections FakeSceneInterpreter::analyze([[maybe_unused]] const Frame& frame) {
+ObjectDetections FakeFrameAnalyzer::analyze([[maybe_unused]] const Frame& frame) {
     step_ = step_ % scenario_.size();
     const auto& [result, label] = scenario_.at(step_);
     std::cout << "[FakeFrameAnalyzer] Step " << step_ + 1 << ": " << label << "\n";
