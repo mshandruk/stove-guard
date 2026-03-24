@@ -29,7 +29,9 @@ void VideoPipeline::run() {
     while (const auto frame = frameSource_.getFrame()) {
         const auto objectDetections = frameAnalyzer_.analyze(*frame);
         const auto filteredDetections = detectionFilter_.filter(objectDetections);
-        const auto scene = SceneMapper::map(filteredDetections);
+        auto scene = SceneMapper::map(filteredDetections);
+        scene.stoveState = stoveStabilizer_.updateState(scene.stoveState);
+        scene.personState = personStabilizer_.updateState(scene.personState);
         safetyService_.handle(scene);
         std::cout << "[Pipeline] frame processed" << '\n';
         if (frameDisplay_ != nullptr) {

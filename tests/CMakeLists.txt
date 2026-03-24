@@ -5,6 +5,7 @@ add_executable(${TEST_TARGET}
         SceneMapperTests.cpp
         SafetyServiceTests.cpp
         DetectionFilterTests.cpp
+        SafetyServiceTests.cpp
 )
 
 target_link_libraries(${TEST_TARGET}

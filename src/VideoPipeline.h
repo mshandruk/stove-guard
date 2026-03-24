@@ -5,6 +5,7 @@
 #include "FrameDisplay.h"
 #include "FrameSource.h"
 #include "SafetyService.h"
+#include "StateStabilizer.h"
 
 class VideoPipeline {
   public:
@@ -30,4 +31,6 @@ class VideoPipeline {
     FrameAnalyzer& frameAnalyzer_;
     const DetectionFilter& detectionFilter_;
     FrameDisplay* frameDisplay_ = nullptr;
+    StateStabilizer<PersonState> personStabilizer_{PersonState::Absent, 3};
+    StateStabilizer<StoveState> stoveStabilizer_{StoveState::Off, 3};
 };
