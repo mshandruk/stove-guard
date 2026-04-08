@@ -1,7 +1,5 @@
 #include "VideoPipeline.h"
 
-#include <iostream>
-
 #include "DetectionFilter.h"
 #include "FrameAnalyzer.h"
 #include "FrameDisplay.h"
@@ -26,16 +24,26 @@ VideoPipeline::VideoPipeline(
 }
 
 void VideoPipeline::run() {
-    while (const auto frame = frameSource_.getFrame()) {
-        const auto objectDetections = frameAnalyzer_.analyze(*frame);
-        const auto filteredDetections = detectionFilter_.filter(objectDetections);
-        auto scene = SceneMapper::map(filteredDetections);
-        scene.stoveState = stoveStabilizer_.updateState(scene.stoveState);
-        scene.personState = personStabilizer_.updateState(scene.personState);
-        safetyService_.handle(scene);
-        std::cout << "[Pipeline] frame processed" << '\n';
-        if (frameDisplay_ != nullptr) {
-            frameDisplay_->render(*frame, objectDetections);
-        }
+    while (processNextFrame()) {
     }
+}
+
+bool VideoPipeline::processNextFrame() {
+    const auto frame = frameSource_.getFrame();
+    if (!frame) {
+        return false;
+    }
+
+    const auto objectDetections = frameAnalyzer_.analyze(*frame);
+    const auto filteredDetections = detectionFilter_.filter(objectDetections);
+    auto scene = SceneMapper::map(filteredDetections);
+    scene.personState = personStabilizer_.updateState(scene.personState);
+    scene.stoveState = stoveStabilizer_.updateState(scene.stoveState);
+    safetyService_.handle(scene);
+
+    if (frameDisplay_ != nullptr) {
+        frameDisplay_->render(*frame, objectDetections);
+    }
+
+    return true;
 }

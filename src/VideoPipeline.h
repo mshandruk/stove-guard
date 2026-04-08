@@ -25,6 +25,8 @@ class VideoPipeline {
 
     void run();
 
+    bool processNextFrame();
+
   private:
     SafetyService& safetyService_;
     FrameSource& frameSource_;
