@@ -6,16 +6,34 @@
 #include <vector>
 
 struct BoundingBox {
-    float x;
-    float y;
-    float width;
-    float height;
+    float x{0.0F};      // NOLINT
+    float y{0.0F};      // NOLINT
+    float width{0.0F};  // NOLINT
+    float height{0.0F}; // NOLINT
+
+    [[nodiscard]] float left() const noexcept {
+        return x;
+    }
+
+    [[nodiscard]] float right() const noexcept {
+        return x + width;
+    }
+
+    [[nodiscard]] float top() const noexcept {
+        return y;
+    }
+
+    [[nodiscard]] float bottom() const noexcept {
+        return y + height;
+    }
 };
 
 enum class LabelClassification : uint8_t {
     Unknown,
     Person,
     Stove,
+    Fire,
+    Pot,
 };
 
 inline std::string_view labelToString(const LabelClassification& label) {
@@ -25,6 +43,12 @@ inline std::string_view labelToString(const LabelClassification& label) {
     }
     case LabelClassification::Stove: {
         return "stove";
+    }
+    case LabelClassification::Fire: {
+        return "fire";
+    }
+    case LabelClassification::Pot: {
+        return "pot";
     }
     default: {
         return "unknown";

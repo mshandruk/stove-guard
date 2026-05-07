@@ -10,6 +10,7 @@
 
 #include "Clock.h"
 #include "DetectionFilter.h"
+#include "FakeData.h"
 #include "Frame.h"
 #include "FrameAnalyzer.h"
 #include "FrameSource.h"
@@ -113,8 +114,22 @@ class VideoPipelineTest : public testing::Test {
 
   private:
     ConfidenceThresholds confidenceThresholds{
-        {LabelClassification::Person, Confidence{0.7F}},
-        {LabelClassification::Stove, Confidence{0.7F}},
+        {
+            LabelClassification::Person,
+            Confidence{0.7F},
+        },
+        {
+            LabelClassification::Stove,
+            Confidence{0.7F},
+        },
+        {
+            LabelClassification::Pot,
+            Confidence{0.7F},
+        },
+        {
+            LabelClassification::Fire,
+            Confidence{0.7F},
+        },
     };
     DetectionFilter detectionFilter_{confidenceThresholds};
 
@@ -127,27 +142,6 @@ class VideoPipelineTest : public testing::Test {
 
 namespace {
 constexpr std::size_t STABILIZATION_FRAMES = 3;
-constexpr float CONFIDENCE_PERSON_VALUE = 0.8F;
-constexpr float CONFIDENCE_STOVE_VALUE = 0.8F;
-
-namespace FakeData {
-namespace Factory {
-ObjectDetection person() {
-    return ObjectDetection{
-        LabelClassification::Person,
-        Confidence{CONFIDENCE_PERSON_VALUE},
-        BoundingBox{200, 200, 300, 300},
-    };
-}
-
-ObjectDetection stove() {
-    return ObjectDetection{
-        LabelClassification::Stove,
-        Confidence{CONFIDENCE_STOVE_VALUE},
-        BoundingBox{200, 200, 300, 300},
-    };
-}
-}; // namespace Factory
 
 namespace Scenarios {
 FakeScenario repeat(const std::size_t n, const FakeScenario& scenario) {
@@ -166,23 +160,27 @@ void append(FakeScenario& target, const FakeScenario& other) {
 }
 
 FakeScenario stoveOn() {
-    return FakeScenario{{ObjectDetections{
-        Factory::stove(),
-    }}};
+    return FakeScenario{
+        {
+            ObjectDetections{
+                FakeData::Factory::stove(),
+                FakeData::Factory::fireOnStove(),
+            },
+        },
+    };
 }
 
 FakeScenario stoveOnWithPerson() {
     return FakeScenario{
         ObjectDetections{
-            Factory::person(),
-            Factory::stove(),
+            FakeData::Factory::person(),
+            FakeData::Factory::stove(),
+            FakeData::Factory::fireOnStove(),
         },
     };
 }
 
 } // namespace Scenarios
-
-}; // namespace FakeData
 
 void runAllSteps(VideoPipeline& pipeline) {
     while (pipeline.processNextFrame()) {
@@ -191,7 +189,7 @@ void runAllSteps(VideoPipeline& pipeline) {
 } // namespace
 
 TEST_F(VideoPipelineTest, DangerousEntered_WhenStoveOnAndPersonAbsent) {
-    const auto scenario = FakeData::Scenarios::repeat(STABILIZATION_FRAMES, FakeData::Scenarios::stoveOn());
+    const auto scenario = Scenarios::repeat(STABILIZATION_FRAMES, Scenarios::stoveOn());
     constexpr auto alarmThreshold = Duration{2};
     auto pipeline = makePipeline(alarmThreshold, scenario);
 
@@ -204,12 +202,11 @@ TEST_F(VideoPipelineTest, DangerousEntered_WhenStoveOnAndPersonAbsent) {
 
 TEST_F(VideoPipelineTest, NotCancelDangerousState_WhenDangerousEnteredAndNoicePersonAppears) {
     FakeScenario scenario;
-    const auto dangerScene = FakeData::Scenarios::repeat(STABILIZATION_FRAMES, FakeData::Scenarios::stoveOn());
-    FakeData::Scenarios::append(scenario, dangerScene);
+    const auto dangerScene = Scenarios::repeat(STABILIZATION_FRAMES, Scenarios::stoveOn());
+    Scenarios::append(scenario, dangerScene);
 
-    const auto noiseScene =
-        FakeData::Scenarios::repeat(STABILIZATION_FRAMES - 1, FakeData::Scenarios::stoveOnWithPerson());
-    FakeData::Scenarios::append(scenario, noiseScene);
+    const auto noiseScene = Scenarios::repeat(STABILIZATION_FRAMES - 1, Scenarios::stoveOnWithPerson());
+    Scenarios::append(scenario, noiseScene);
 
     constexpr auto alarmThreshold = Duration{2};
     auto pipeline = makePipeline(alarmThreshold, scenario);
@@ -223,11 +220,11 @@ TEST_F(VideoPipelineTest, NotCancelDangerousState_WhenDangerousEnteredAndNoicePe
 
 TEST_F(VideoPipelineTest, DangerousCleared_WhenPersonAppears) {
     FakeScenario scenario;
-    const auto dangerScene = FakeData::Scenarios::repeat(STABILIZATION_FRAMES, FakeData::Scenarios::stoveOn());
-    FakeData::Scenarios::append(scenario, dangerScene);
+    const auto dangerScene = Scenarios::repeat(STABILIZATION_FRAMES, Scenarios::stoveOn());
+    Scenarios::append(scenario, dangerScene);
 
-    const auto safeScene = FakeData::Scenarios::repeat(STABILIZATION_FRAMES, FakeData::Scenarios::stoveOnWithPerson());
-    FakeData::Scenarios::append(scenario, safeScene);
+    const auto safeScene = Scenarios::repeat(STABILIZATION_FRAMES, Scenarios::stoveOnWithPerson());
+    Scenarios::append(scenario, safeScene);
 
     constexpr auto alarmThreshold = Duration{60};
     auto pipeline = makePipeline(alarmThreshold, scenario);
@@ -241,11 +238,11 @@ TEST_F(VideoPipelineTest, DangerousCleared_WhenPersonAppears) {
 
 TEST_F(VideoPipelineTest, NotEvents_WhenSafeState) {
     FakeScenario scenario;
-    const auto safeScene = FakeData::Scenarios::repeat(STABILIZATION_FRAMES, FakeData::Scenarios::stoveOnWithPerson());
-    FakeData::Scenarios::append(scenario, safeScene);
+    const auto safeScene = Scenarios::repeat(STABILIZATION_FRAMES, Scenarios::stoveOnWithPerson());
+    Scenarios::append(scenario, safeScene);
 
-    const auto noiceScene = FakeData::Scenarios::repeat(STABILIZATION_FRAMES - 1, FakeData::Scenarios::stoveOn());
-    FakeData::Scenarios::append(scenario, noiceScene);
+    const auto noiceScene = Scenarios::repeat(STABILIZATION_FRAMES - 1, Scenarios::stoveOn());
+    Scenarios::append(scenario, noiceScene);
 
     constexpr auto alarmThreshold = Duration{2};
     auto pipeline = makePipeline(alarmThreshold, scenario);
@@ -258,11 +255,11 @@ TEST_F(VideoPipelineTest, NotEvents_WhenSafeState) {
 
 TEST_F(VideoPipelineTest, AlarmStarted_WhenDangerousAboveAlarmThreshold) {
     FakeScenario scenario;
-    const auto dangerScene = FakeData::Scenarios::repeat(STABILIZATION_FRAMES, FakeData::Scenarios::stoveOn());
-    FakeData::Scenarios::append(scenario, dangerScene);
+    const auto dangerScene = Scenarios::repeat(STABILIZATION_FRAMES, Scenarios::stoveOn());
+    Scenarios::append(scenario, dangerScene);
 
-    const auto alarmScene = FakeData::Scenarios::repeat(1, FakeData::Scenarios::stoveOn());
-    FakeData::Scenarios::append(scenario, alarmScene);
+    const auto alarmScene = Scenarios::repeat(1, Scenarios::stoveOn());
+    Scenarios::append(scenario, alarmScene);
 
     constexpr auto alarmThreshold = Duration{2};
     auto pipeline = makePipeline(alarmThreshold, scenario);
@@ -283,14 +280,14 @@ TEST_F(VideoPipelineTest, AlarmStarted_WhenDangerousAboveAlarmThreshold) {
 
 TEST_F(VideoPipelineTest, AlarmCleared_WhenPersonAppears) {
     FakeScenario scenario;
-    const auto dangerousScene = FakeData::Scenarios::repeat(STABILIZATION_FRAMES, FakeData::Scenarios::stoveOn());
-    FakeData::Scenarios::append(scenario, dangerousScene);
+    const auto dangerousScene = Scenarios::repeat(STABILIZATION_FRAMES, Scenarios::stoveOn());
+    Scenarios::append(scenario, dangerousScene);
 
-    const auto alarmScene = FakeData::Scenarios::repeat(1, FakeData::Scenarios::stoveOn());
-    FakeData::Scenarios::append(scenario, alarmScene);
+    const auto alarmScene = Scenarios::repeat(1, Scenarios::stoveOn());
+    Scenarios::append(scenario, alarmScene);
 
-    const auto safeScene = FakeData::Scenarios::repeat(STABILIZATION_FRAMES, FakeData::Scenarios::stoveOnWithPerson());
-    FakeData::Scenarios::append(scenario, safeScene);
+    const auto safeScene = Scenarios::repeat(STABILIZATION_FRAMES, Scenarios::stoveOnWithPerson());
+    Scenarios::append(scenario, safeScene);
 
     constexpr auto alarmThreshold = Duration{2};
     auto pipeline = makePipeline(alarmThreshold, scenario);
@@ -315,15 +312,16 @@ TEST_F(VideoPipelineTest, AlarmCleared_WhenPersonAppears) {
 }
 
 TEST_F(VideoPipelineTest, AlarmNotStarted_WhenDangerousAboveAlarmThresholdAndTimeNotChanged) {
-    FakeScenario scenario;
-    const auto dangerScene = FakeData::Scenarios::repeat(STABILIZATION_FRAMES, FakeData::Scenarios::stoveOn());
-    FakeData::Scenarios::append(scenario, dangerScene);
+    FakeScenario fullScenario;
+    // Prepare for dangerous test
+    const auto dangerScene = Scenarios::repeat(STABILIZATION_FRAMES, Scenarios::stoveOn());
+    Scenarios::append(fullScenario, dangerScene);
 
-    const auto alarmScene = FakeData::Scenarios::repeat(10, FakeData::Scenarios::stoveOn());
-    FakeData::Scenarios::append(scenario, alarmScene);
+    const auto alarmScene = Scenarios::repeat(10, Scenarios::stoveOn());
+    Scenarios::append(fullScenario, alarmScene);
 
     constexpr auto alarmThreshold = Duration{2};
-    auto pipeline = makePipeline(alarmThreshold, scenario);
+    auto pipeline = makePipeline(alarmThreshold, fullScenario);
 
     for (std::size_t step = 0; step < dangerScene.size(); ++step) {
         pipeline.processNextFrame();
