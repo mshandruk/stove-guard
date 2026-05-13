@@ -160,24 +160,23 @@ void append(FakeScenario& target, const FakeScenario& other) {
 }
 
 FakeScenario stoveOn() {
-    return FakeScenario{
-        {
-            ObjectDetections{
-                FakeData::Factory::stove(),
-                FakeData::Factory::fireOnStove(),
-            },
-        },
-    };
+    auto stove = FakeData::Factory::makeStove();
+    auto fireOnStove = FakeData::Factory::makeFireOnStove(stove);
+
+    return FakeScenario{{stove, fireOnStove}};
 }
 
 FakeScenario stoveOnWithPerson() {
-    return FakeScenario{
-        ObjectDetections{
-            FakeData::Factory::person(),
-            FakeData::Factory::stove(),
-            FakeData::Factory::fireOnStove(),
-        },
-    };
+    const auto stove = FakeData::Factory::makeStove();
+    const auto fireOnStove = FakeData::Factory::makeFireOnStove(stove);
+    const auto person = FakeData::Factory::makePerson();
+
+    return FakeScenario{{
+        stove,
+        fireOnStove,
+        person,
+
+    }};
 }
 
 } // namespace Scenarios
