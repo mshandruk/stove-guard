@@ -6,6 +6,7 @@ add_executable(${TEST_TARGET}
         DetectionFilterTests.cpp
         SafetyServiceTests.cpp
         VideoPipelineTests.cpp
+        StateStabilizerTests.cpp
 )
 
 target_link_libraries(${TEST_TARGET}
