@@ -27,6 +27,7 @@
 #include "RealClock.h"
 #include "SafetyService.h"
 #include "VideoPipeline.h"
+#include "YoloFrameAnalyzer.h"
 
 class VideoFileFrameSource final : public FrameSource {
   public:
@@ -92,7 +93,7 @@ class OpencvFrameDisplay final : public FrameDisplay {
 };
 
 namespace {
-FakeScenario getFakeScenario() {
+[[maybe_unused]] FakeScenario getFakeScenario() {
 
     return {
 
@@ -157,10 +158,15 @@ int main(const int argc, char* argv[]) {
     }
 
     // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-pointer-arithmetic)
-    const std::string_view videoPath = argv[1];
-
+    const std::filesystem::path videoPath = argv[1];
     if (!std::filesystem::is_regular_file(videoPath)) {
-        std::cerr << "Error: File-> " << videoPath << " not found." << '\n';
+        std::cerr << "[ERROR] Please provide a valid video file path.\n";
+        return EXIT_FAILURE;
+    }
+
+    const std::filesystem::path modelPath = "models/yolov8n.onnx";
+    if (!YoloFrameAnalyzer::isValidModelPath(modelPath)) {
+        std::cerr << "[ERROR] Please provide a valid '.onnx' model file path.\n";
         return EXIT_FAILURE;
     }
 
@@ -180,7 +186,8 @@ int main(const int argc, char* argv[]) {
 
     try {
         VideoFileFrameSource frameSource(videoPath);
-        FakeFrameAnalyzer frameAnalyzer{getFakeScenario()};
+        // FakeFrameAnalyzer frameAnalyzer{getFakeScenario()};
+        YoloFrameAnalyzer frameAnalyzer{modelPath};
         VideoPipeline videoPipeline{safetyService, frameSource, frameAnalyzer, detectionFilter, &frameDisplay};
         videoPipeline.run();
     } catch (const std::exception& e) {

@@ -11,3 +11,6 @@ cmake-build-*
 .clang-format
 .clang-tidy
 .clangd
+
+# third party
+third_party/onnxruntime-*
