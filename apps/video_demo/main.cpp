@@ -4,6 +4,7 @@
 #include <exception>
 #include <filesystem>
 #include <iostream>
+#include <memory>
 #include <optional>
 #include <stdexcept>
 #include <string>
@@ -31,11 +32,6 @@
 #include "SafetyService.h"
 #include "VideoPipeline.h"
 #include "YoloFrameAnalyzer.h"
-
-namespace gsl {
-template <typename T>
-using owner = T;
-}
 
 class VideoFileFrameSource final : public FrameSource {
   public:
@@ -157,6 +153,21 @@ StoveGuard::AppOptions buildAppOptions(const int argc, char** argv) {
     return toAppOptions(parser.parse());
 }
 
+std::unique_ptr<FrameAnalyzer> createFrameAnalyzer(const StoveGuard::AppOptions& options) {
+    switch (options.analyzer) {
+    case StoveGuard::Analyzer::Fake: {
+        std::cout << "[DEBUG] Create frame analyzer: " << analyzerToString(options.analyzer) << '\n';
+        return std::make_unique<FakeFrameAnalyzer>(getFakeScenario());
+    }
+    case StoveGuard::Analyzer::Yolo: {
+        std::cout << "[DEBUG] Create frame analyzer: " << analyzerToString(options.analyzer) << '\n';
+        // NOLINTNEXTLINE(bugprone-unchecked-optional-access)
+        return std::make_unique<YoloFrameAnalyzer>(options.modelPath.value());
+    }
+    }
+    throw std::runtime_error("Unknown frame analyzer.");
+}
+
 } // namespace
 
 int main(const int argc, char* argv[]) {
@@ -207,24 +218,9 @@ int main(const int argc, char* argv[]) {
     SafetyService safetyService{ALARM_THRESHOLD, consoleNotifier, frameTimer};
     OpencvFrameDisplay frameDisplay;
 
-    gsl::owner<FrameAnalyzer*> frameAnalyzer = nullptr;
     try {
         VideoFileFrameSource frameSource(appOptions.videoPath);
-
-        // TODO: move to factory function with smart ptr
-        if (appOptions.analyzer == StoveGuard::Analyzer::Yolo) {
-            // NOLINTNEXTLINE(bugprone-unchecked-optional-access)
-            frameAnalyzer = new YoloFrameAnalyzer(appOptions.modelPath.value());
-            std::cout << "[INFO] Create analyzer: " + std::string(StoveGuard::analyzerToString(appOptions.analyzer))
-                      << '\n';
-        } else if (appOptions.analyzer == StoveGuard::Analyzer::Fake) {
-            frameAnalyzer = new FakeFrameAnalyzer(getFakeScenario());
-            std::cout << "[INFO] Create analyzer: " + std::string(StoveGuard::analyzerToString(appOptions.analyzer))
-                      << '\n';
-        } else {
-            // TODO: throw runtime exception
-            return EXIT_FAILURE;
-        }
+        auto frameAnalyzer = createFrameAnalyzer(appOptions);
 
         // TODO: move to factory function with smart pointer
         VideoPipeline videoPipeline{safetyService, frameSource, *frameAnalyzer, detectionFilter, &frameDisplay};
@@ -232,10 +228,7 @@ int main(const int argc, char* argv[]) {
 
     } catch (const std::exception& e) {
         std::cerr << e.what() << '\n';
-        delete frameAnalyzer;
         return EXIT_FAILURE;
     }
-    delete frameAnalyzer;
-
     return 0;
 }
