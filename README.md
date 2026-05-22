@@ -71,7 +71,9 @@ cmake --build build
 ### Run
 
 ```bash
-./build/apps/video_demo/stove_guard_video_demo video/VID_20260117_204915.mp4
+./build/apps/video_demo/stove_guard_video_demo --video path/to/video.mp4 \
+  --analyzer yolo \
+  --model path/to/model.onnx
 ```
 
 ## License

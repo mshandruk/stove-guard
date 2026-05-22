@@ -16,10 +16,13 @@
 #include <opencv2/highgui.hpp>
 #include <opencv2/imgproc.hpp>
 
+#include "AppOptions.h"
+#include "ArgParser.h"
 #include "ConsoleNotifier.h"
 #include "DetectionFilter.h"
 #include "FakeFrameAnalyzer.h"
 #include "Frame.h"
+#include "FrameAnalyzer.h"
 #include "FrameDisplay.h"
 #include "FrameSource.h"
 #include "FrameTimer.h"
@@ -28,6 +31,11 @@
 #include "SafetyService.h"
 #include "VideoPipeline.h"
 #include "YoloFrameAnalyzer.h"
+
+namespace gsl {
+template <typename T>
+using owner = T;
+}
 
 class VideoFileFrameSource final : public FrameSource {
   public:
@@ -144,30 +152,45 @@ namespace {
     };
 }
 
-void printUsage(const std::string_view progname) {
-    std::cout << "Usage: " << progname << " <path-to-video-file>\n";
+StoveGuard::AppOptions buildAppOptions(const int argc, char** argv) {
+    const StoveGuard::Cli::ArgParser parser(argc, argv);
+    return toAppOptions(parser.parse());
 }
+
 } // namespace
 
 int main(const int argc, char* argv[]) {
-    if (argc != 2) {
-        // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-pointer-arithmetic)
-        const std::string_view progname = argv[0] != nullptr ? argv[0] : "stove_guard_video_demo";
-        printUsage(progname);
+    const std::string_view progname =
+        argc > 0 && argv != nullptr && argv[0] != nullptr ? argv[0] : "stove_guard_video_demo"; // NOLINT
+
+    std::optional<StoveGuard::AppOptions> appOptionsOpt;
+    try {
+        appOptionsOpt = buildAppOptions(argc, argv);
+    } catch (const StoveGuard::Cli::ParseError& e) {
+        std::cerr << e.what() << '\n';
+        StoveGuard::Cli::ArgParser::usage(progname);
+        return EXIT_FAILURE;
+    } catch (const std::exception& e) {
+        std::cerr << e.what() << '\n';
         return EXIT_FAILURE;
     }
 
-    // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-pointer-arithmetic)
-    const std::filesystem::path videoPath = argv[1];
-    if (!std::filesystem::is_regular_file(videoPath)) {
+    if (!appOptionsOpt.has_value()) {
+        return EXIT_FAILURE;
+    }
+
+    const auto& appOptions = *appOptionsOpt;
+    if (!std::filesystem::is_regular_file(appOptions.videoPath)) {
         std::cerr << "[ERROR] Please provide a valid video file path.\n";
         return EXIT_FAILURE;
     }
 
-    const std::filesystem::path modelPath = "models/yolov8n.onnx";
-    if (!YoloFrameAnalyzer::isValidModelPath(modelPath)) {
-        std::cerr << "[ERROR] Please provide a valid '.onnx' model file path.\n";
-        return EXIT_FAILURE;
+    if (appOptions.analyzer == StoveGuard::Analyzer::Yolo) {
+        // NOLINTNEXTLINE(bugprone-unchecked-optional-access)
+        if (!YoloFrameAnalyzer::isValidModelPath(appOptions.modelPath.value())) {
+            std::cerr << "[ERROR] Please provide a valid '.onnx' model file path.\n";
+            return EXIT_FAILURE;
+        }
     }
 
     constexpr auto ALARM_THRESHOLD = std::chrono::seconds{2};
@@ -184,16 +207,35 @@ int main(const int argc, char* argv[]) {
     SafetyService safetyService{ALARM_THRESHOLD, consoleNotifier, frameTimer};
     OpencvFrameDisplay frameDisplay;
 
+    gsl::owner<FrameAnalyzer*> frameAnalyzer = nullptr;
     try {
-        VideoFileFrameSource frameSource(videoPath);
-        // FakeFrameAnalyzer frameAnalyzer{getFakeScenario()};
-        YoloFrameAnalyzer frameAnalyzer{modelPath};
-        VideoPipeline videoPipeline{safetyService, frameSource, frameAnalyzer, detectionFilter, &frameDisplay};
+        VideoFileFrameSource frameSource(appOptions.videoPath);
+
+        // TODO: move to factory function with smart ptr
+        if (appOptions.analyzer == StoveGuard::Analyzer::Yolo) {
+            // NOLINTNEXTLINE(bugprone-unchecked-optional-access)
+            frameAnalyzer = new YoloFrameAnalyzer(appOptions.modelPath.value());
+            std::cout << "[INFO] Create analyzer: " + std::string(StoveGuard::analyzerToString(appOptions.analyzer))
+                      << '\n';
+        } else if (appOptions.analyzer == StoveGuard::Analyzer::Fake) {
+            frameAnalyzer = new FakeFrameAnalyzer(getFakeScenario());
+            std::cout << "[INFO] Create analyzer: " + std::string(StoveGuard::analyzerToString(appOptions.analyzer))
+                      << '\n';
+        } else {
+            // TODO: throw runtime exception
+            return EXIT_FAILURE;
+        }
+
+        // TODO: move to factory function with smart pointer
+        VideoPipeline videoPipeline{safetyService, frameSource, *frameAnalyzer, detectionFilter, &frameDisplay};
         videoPipeline.run();
+
     } catch (const std::exception& e) {
         std::cerr << e.what() << '\n';
+        delete frameAnalyzer;
         return EXIT_FAILURE;
     }
+    delete frameAnalyzer;
 
     return 0;
 }

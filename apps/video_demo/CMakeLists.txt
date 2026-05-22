@@ -1,4 +1,4 @@
-add_executable(stove_guard_video_demo main.cpp)
+add_executable(stove_guard_video_demo main.cpp ArgParser.cpp)
 target_link_libraries(stove_guard_video_demo PRIVATE apps_common)
 
 function(copy_runtime_dependencies target dependency)
