@@ -6,6 +6,18 @@ such as unattended cooking or forgotten food.
 
 **Note: This project is currently in the early development stage.**
 
+# Dependencies
+
+## Install ONNX Runtime
+
+### On linux
+
+```bash
+bash ./scripts/setup_onnx_deps.sh
+```
+
+The script downloads and installs the required ONNX Runtime binaries into `third_party` directory.
+
 # Build Instructions
 
 ## Configure(DEBUG with tests)
