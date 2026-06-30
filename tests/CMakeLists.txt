@@ -1,12 +1,20 @@
-set(TEST_TARGET stove_monitor_tests)
+set(TEST_TARGET stove_guard_tests)
 
-add_executable(${TEST_TARGET} StoveMonitorTests.cpp DetectionMapperTests.cpp StoveGuardAppTests.cpp)
+add_executable(${TEST_TARGET}
+        StoveMonitorTests.cpp
+        SceneMapperTests.cpp
+        DetectionFilterTests.cpp
+        SafetyServiceTests.cpp
+        VideoPipelineTests.cpp
+        StateStabilizerTests.cpp
+)
 
 target_link_libraries(${TEST_TARGET}
         PRIVATE
-        stove_guard_lib
+        apps_common
         GTest::gtest
         GTest::gtest_main
+
 )
 
 include(GoogleTest)

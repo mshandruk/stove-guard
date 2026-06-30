@@ -1,5 +1,9 @@
 #ifndef STOVEGUARD_FRAME_H
 #define STOVEGUARD_FRAME_H
 
-struct Frame {};
+#include <opencv2/opencv.hpp>
+
+struct Frame {
+    cv::Mat data;
+};
 #endif // STOVEGUARD_FRAME_H

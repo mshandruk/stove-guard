@@ -1,22 +1,21 @@
 #ifndef STOVEGUARD_FRAMEANALYZER_H
 #define STOVEGUARD_FRAMEANALYZER_H
 
-#include "Detection.h"
 #include "Frame.h"
+#include "ObjectDetection.h"
 
 class FrameAnalyzer {
   public:
     FrameAnalyzer() = default;
-
-    FrameAnalyzer(const FrameAnalyzer& rhs) = delete;
-    FrameAnalyzer& operator=(const FrameAnalyzer& rhs) = delete;
-
-    FrameAnalyzer(FrameAnalyzer&& rhs) = default;
-    FrameAnalyzer& operator=(FrameAnalyzer&& rhs) = default;
-
     virtual ~FrameAnalyzer() = default;
 
-    virtual Detection analyze(const Frame& frame) = 0;
+    FrameAnalyzer(const FrameAnalyzer& other) = delete;
+    FrameAnalyzer& operator=(const FrameAnalyzer& other) = delete;
+
+    FrameAnalyzer(FrameAnalyzer&& other) = default;
+    FrameAnalyzer& operator=(FrameAnalyzer&& other) = default;
+
+    virtual ObjectDetections analyze(const Frame& frame) = 0;
 };
 
 #endif // STOVEGUARD_FRAMEANALYZER_H

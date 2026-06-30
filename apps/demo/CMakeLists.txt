@@ -1,2 +1,2 @@
 add_executable(stove_guard_demo main.cpp)
-target_link_libraries(stove_guard_demo PRIVATE stove_guard_lib)
+target_link_libraries(stove_guard_demo PRIVATE apps_common)
