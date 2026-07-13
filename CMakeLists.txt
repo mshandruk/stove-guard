@@ -75,11 +75,7 @@ if (BUILD_TESTS)
     add_subdirectory(tests)
 endif ()
 
-add_subdirectory(apps/common)
-if (BUILD_DEMO)
-    add_subdirectory(apps/demo)
-endif ()
-
 if (BUILD_VIDEO_DEMO)
+    add_subdirectory(apps/common)
     add_subdirectory(apps/video_demo)
 endif ()

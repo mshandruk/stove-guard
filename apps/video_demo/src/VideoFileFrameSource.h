@@ -13,4 +13,5 @@ class VideoFileFrameSource final : public FrameSource {
 
   private:
     cv::VideoCapture capture_;
+    std::chrono::milliseconds delay_ = std::chrono::milliseconds{33};
 };
