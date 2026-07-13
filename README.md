@@ -2,6 +2,22 @@
 
 An intelligent computer vision system for real-time monitoring of gas stoves.
 
+## Quick video demo
+
+Download the latest demo archive from the GitHub Releases page.
+
+Extract it and run:
+
+```bash
+
+./stove_guard_video_demo \
+    --video videos/stove_with_cookware_flame1.mp4 \
+    --analyzer yolo \
+    --model models/yolov8n.onnx
+```
+
+For building from source, see the [Getting started](#getting-started)
+
 ## Requirements
 
 - Ubuntu 24.04 LTS
