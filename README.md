@@ -71,9 +71,30 @@ cmake --build build
 ### Run
 
 ```bash
-./build/apps/video_demo/stove_guard_video_demo --video path/to/video.mp4 \
+./build/apps/video_demo/stove_guard_video_demo \
+  --video demo/videos/stove_with_cookware_flame2.mp4 \
   --analyzer yolo \
-  --model path/to/model.onnx
+  --model demo/models/yolov8n.onnx
+```
+
+### Command-line options
+
+| Option            | Description                                                                |
+|-------------------|----------------------------------------------------------------------------|
+| `--video <path>`  | Path to the input video file.                                              |
+| `--analyzer fake` | Use the built-in fake detection scenario.                                  |
+| `--analyzer yolo` | Use the YOLO object detector via ONNX Runtime.                             |
+| `--model <path>`  | Path to the YOLO ONNX model (required when `--analyzer yolo` is selected). |
+
+### Example
+
+Run the video demo using the bundled YOLO model and sample video:
+
+```bash
+./build/apps/video_demo/stove_guard_video_demo \
+  --video demo/videos/stove_with_cookware_flame2.mp4 \
+  --analyzer yolo \
+  --model demo/models/yolov8n.onnx
 ```
 
 ## License
