@@ -1,8 +1,11 @@
 #include "RealClock.h"
+
 #include <chrono>
+
+#include "Clock.h"
 
 using namespace std::chrono;
 
-steady_clock::time_point RealClock::getTime() const {
+TimePoint RealClock::getTime() const {
     return steady_clock::now();
 }

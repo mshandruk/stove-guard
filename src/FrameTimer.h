@@ -1,7 +1,4 @@
-#ifndef STOVEGUARD_FRAMETIMER_H
-#define STOVEGUARD_FRAMETIMER_H
-
-#include <optional>
+#pragma once
 
 #include "Clock.h"
 #include "StoveMonitor.h"
@@ -21,7 +18,5 @@ class FrameTimer {
 
   private:
     Clock& clock_;
-    std::optional<std::chrono::steady_clock::time_point> previousTime_;
+    TimePoint previousTime_;
 };
-
-#endif // STOVEGUARD_FRAMETIMER_H

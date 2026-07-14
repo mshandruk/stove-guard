@@ -1,5 +1,4 @@
-#ifndef STOVEGUARD_REALCLOCK_H
-#define STOVEGUARD_REALCLOCK_H
+#pragma once
 
 #include <chrono>
 
@@ -8,7 +7,5 @@
 class RealClock final : public Clock {
   public:
     [[nodiscard]]
-    std::chrono::steady_clock::time_point getTime() const override;
+    TimePoint getTime() const override;
 };
-
-#endif // STOVEGUARD_REALCLOCK_H

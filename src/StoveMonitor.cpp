@@ -1,10 +1,10 @@
 #include "StoveMonitor.h"
 
-StoveMonitor::StoveMonitor(const Duration alarmThreshold)
+StoveMonitor::StoveMonitor(Duration alarmThreshold)
         : alarmThreshold_{alarmThreshold} {
 }
 
-Event StoveMonitor::process(const StoveState stoveState, const PersonState personState, const Duration delta) {
+Event StoveMonitor::process(StoveState stoveState, PersonState personState, Duration delta) {
 
     const auto dangerous = isDangerous(stoveState, personState);
 

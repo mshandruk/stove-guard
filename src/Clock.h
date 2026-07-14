@@ -1,6 +1,8 @@
-#ifndef STOVEGUARD_CLOCK_H
-#define STOVEGUARD_CLOCK_H
+#pragma once
+
 #include <chrono>
+
+using TimePoint = std::chrono::steady_clock::time_point;
 
 class Clock {
   public:
@@ -13,6 +15,5 @@ class Clock {
     Clock& operator=(const Clock&&) = delete;
 
     [[nodiscard]]
-    virtual std::chrono::steady_clock::time_point getTime() const = 0;
+    virtual TimePoint getTime() const = 0;
 };
-#endif // STOVEGUARD_CLOCK_H

@@ -1,18 +1,16 @@
 #include "FrameTimer.h"
 
-#include <chrono>
-
 #include "Clock.h"
 #include "StoveMonitor.h"
 
 FrameTimer::FrameTimer(Clock& clock)
-        : clock_{clock} {
+        : clock_{clock},
+          previousTime_{clock_.getTime()} {
 }
 
 Duration FrameTimer::tick() {
-    const auto currentTime = clock_.getTime();
-    const auto delta =
-        !previousTime_ ? Duration::zero() : std::chrono::duration_cast<Duration>(currentTime - *previousTime_);
+    const TimePoint currentTime = clock_.getTime();
+    const Duration delta = currentTime - previousTime_;
     previousTime_ = currentTime;
 
     return delta;

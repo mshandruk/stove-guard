@@ -1,12 +1,12 @@
-#ifndef STOVEGUARD_STOVEMONITOR_H
-#define STOVEGUARD_STOVEMONITOR_H
+#pragma once
 
 #include <chrono>
 #include <cstdint>
 
 enum class StoveState : uint8_t { On, Off };
 enum class PersonState : uint8_t { Present, Absent };
-using Duration = std::chrono::seconds;
+
+using Duration = std::chrono::steady_clock::duration;
 
 enum class Event : uint8_t {
     None,
@@ -37,4 +37,3 @@ class StoveMonitor {
 
     [[nodiscard]] bool isTimerExpired() const noexcept;
 };
-#endif // STOVEGUARD_STOVEMONITOR_H

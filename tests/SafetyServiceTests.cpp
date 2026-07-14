@@ -45,12 +45,12 @@ class FakeClock final : public Clock {
         return current_;
     }
 
-    void advance(const seconds seconds) {
+    void advance(Duration seconds) {
         current_ += seconds;
     }
 
   private:
-    steady_clock::time_point current_{Duration::zero()};
+    TimePoint current_{Duration::zero()};
 };
 
 class SafetyServiceTest : public testing::Test {
