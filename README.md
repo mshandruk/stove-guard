@@ -22,7 +22,7 @@ For building from source, see the [Getting started](#getting-started)
 
 - Ubuntu 24.04 LTS
 - C++17 compatible compiler
-- CMake 3.28+
+- CMake 3.16+
 - OpenCV 4.x
 - Git and Git LFS
 
