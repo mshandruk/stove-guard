@@ -81,7 +81,8 @@ int main(int argc, char* argv[]) {
         }
     }
 
-    constexpr auto ALARM_THRESHOLD = std::chrono::seconds{2};
+    constexpr auto ALARM_THRESHOLD = std::chrono::seconds{10};
+    std::cout << "[INFO] Alarm will trigger in " << ALARM_THRESHOLD.count() << " seconds." << '\n';
     ConfidenceThresholds confidenceThresholds{
         {LabelClassification::Person, Confidence{0.7F}},
         {LabelClassification::Stove, Confidence{0.7F}},

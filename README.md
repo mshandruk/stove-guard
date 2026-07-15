@@ -2,6 +2,10 @@
 
 An intelligent computer vision system for real-time monitoring of gas stoves.
 
+## Demo
+
+![Stove Guard Demo](docs/images/demo.gif)
+
 ## Requirements
 
 - Ubuntu 24.04
@@ -83,7 +87,7 @@ cmake -B build -DCMAKE_BUILD_TYPE=Release -DBUILD_VIDEO_DEMO=ON && cmake --build
 ### Command-line options
 
 | Option            | Description                                                                |
-| ----------------- | -------------------------------------------------------------------------- |
+|-------------------|----------------------------------------------------------------------------|
 | `--video <path>`  | Path to the input video file.                                              |
 | `--analyzer fake` | Use the built-in fake detection scenario.                                  |
 | `--analyzer yolo` | Use the YOLO object detector via ONNX Runtime.                             |
