@@ -2,25 +2,10 @@
 
 An intelligent computer vision system for real-time monitoring of gas stoves.
 
-## Quick video demo
-
-Download the latest demo archive from the GitHub Releases page.
-
-Extract it and run:
-
-```bash
-
-./stove_guard_video_demo \
-    --video videos/stove_with_cookware_flame1.mp4 \
-    --analyzer yolo \
-    --model models/yolov8n.onnx
-```
-
-For building from source, see the [Getting started](#getting-started)
-
 ## Requirements
 
-- Ubuntu 24.04 LTS
+- Ubuntu 24.04
+- GUI Gnome3
 - C++17 compatible compiler
 - CMake 3.16+
 - OpenCV 4.x
@@ -77,7 +62,7 @@ sudo apt install -y libopencv-dev
 The script downloads the prebuild ONNX Runtime binaries into the `third_party` directory.
 
 ```bash
-bash ./scripts/setup_onnx_deps.sh
+bash scripts/setup_onnx_deps.sh
 ```
 
 ### Build
@@ -98,7 +83,7 @@ cmake -B build -DCMAKE_BUILD_TYPE=Release -DBUILD_VIDEO_DEMO=ON && cmake --build
 ### Command-line options
 
 | Option            | Description                                                                |
-|-------------------|----------------------------------------------------------------------------|
+| ----------------- | -------------------------------------------------------------------------- |
 | `--video <path>`  | Path to the input video file.                                              |
 | `--analyzer fake` | Use the built-in fake detection scenario.                                  |
 | `--analyzer yolo` | Use the YOLO object detector via ONNX Runtime.                             |
