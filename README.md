@@ -95,6 +95,18 @@ cmake -B build -DCMAKE_BUILD_TYPE=Release -DBUILD_VIDEO_DEMO=ON && cmake --build
 
 ## Development
 
+### Format check
+
+```bash
+cmake --build build --target format
+```
+
+### Static analyze
+
+```bash
+cmake --build build --target tidy
+```
+
 ### Debug build with tests
 
 ```bash
